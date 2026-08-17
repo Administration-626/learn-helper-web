@@ -1,0 +1,172 @@
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-sm);
+}
+
+.progress {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.tag {
+  background: var(--color-bg);
+  color: var(--color-primary);
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.questionText {
+  font-size: 1.15rem;
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--color-text);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  text-align: left;
+  padding: var(--space-md);
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.option:hover:not(.disabled) {
+  border-color: var(--color-accent);
+  background: var(--color-bg);
+}
+
+.option.selected {
+  border-color: var(--color-accent);
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.option.correct {
+  border-color: var(--color-success);
+  background: var(--color-correct-bg);
+}
+
+.option.incorrect {
+  border-color: var(--color-error);
+  background: var(--color-incorrect-bg);
+}
+
+.option.disabled {
+  cursor: default;
+}
+
+.optionLabel {
+  font-weight: bold;
+  margin-right: var(--space-md);
+  color: var(--color-text-secondary);
+}
+
+.option.selected .optionLabel {
+  color: var(--color-accent);
+}
+
+.option.correct .optionLabel {
+  color: var(--color-success);
+}
+
+.option.incorrect .optionLabel {
+  color: var(--color-error);
+}
+
+.optionText {
+  flex: 1;
+}
+
+.feedback {
+  background: var(--color-bg);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--color-accent);
+}
+
+.feedbackTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-xs);
+}
+
+.explanation {
+  font-size: 0.95rem;
+  color: var(--color-text);
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.btn {
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  font-size: 0.95rem;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnPrimary {
+  background: var(--color-accent);
+  color: white;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+
+.btnSecondary {
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.btnSecondary:hover:not(:disabled) {
+  background: var(--color-border);
+}
