@@ -31,6 +31,12 @@ const QUICK_PROMPTS = [
   "🎯 解题技巧与速记口诀"
 ];
 
+function formatCjkMarkdown(text: string): string {
+  if (!text) return "";
+  // Fix CommonMark CJK punctuation-flanked emphasis bug (e.g. **范式（Normal Forms）**概念)
+  return text.replace(/([)）\]】"”’'])\*\*([\u4e00-\u9fa5a-zA-Z0-9])/g, "$1** $2");
+}
+
 let idCounter = 0;
 function createMessageId(): string {
   idCounter += 1;
@@ -357,7 +363,7 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
               }`}
             >
               <div className={styles.markdownBody} style={{ wordBreak: "break-word" }}>
-                <ReactMarkdown>{msg.content}</ReactMarkdown>
+                <ReactMarkdown>{formatCjkMarkdown(msg.content)}</ReactMarkdown>
               </div>
               {msg.role === "assistant" && msg.id !== "init" && (
                 <div className={styles.bubbleFooter}>

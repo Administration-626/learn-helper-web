@@ -8,6 +8,11 @@ import { calculateStats } from "@/lib/quiz-engine";
 import { getActiveLLMConfig } from "@/lib/db";
 import ReactMarkdown from "react-markdown";
 
+function formatCjkMarkdown(text: string): string {
+  if (!text) return "";
+  return text.replace(/([)）\]】"”’'])\*\*([\u4e00-\u9fa5a-zA-Z0-9])/g, "$1** $2");
+}
+
 export default function QuizResultPage() {
   const router = useRouter();
   const { currentSession, questions, resetQuiz } = useQuizStore();
@@ -165,7 +170,7 @@ ${stats.incorrectQuestions.map((q, idx) => `${idx + 1}. [${q.tag || "通用"}] $
         <div className={styles.aiAnalysis}>
           <h3>AI 学习分析与建议</h3>
           <div className={styles.aiContent} style={{ lineHeight: 1.7 }}>
-            <ReactMarkdown>{aiAnalysis}</ReactMarkdown>
+            <ReactMarkdown>{formatCjkMarkdown(aiAnalysis)}</ReactMarkdown>
           </div>
         </div>
       )}
