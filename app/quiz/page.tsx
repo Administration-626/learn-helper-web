@@ -8,7 +8,7 @@ import { db, getQuestions } from "@/lib/db";
 import { generateQuestionOrder } from "@/lib/quiz-engine";
 import type { QuestionBank, QuizMode } from "@/lib/types";
 import QuestionCard from "@/components/QuestionCard";
-import AIChat from "@/components/AIChat";
+import AIChat, { type AIChatLayout } from "@/components/AIChat";
 
 export default function QuizPage() {
   const router = useRouter();
@@ -22,6 +22,19 @@ export default function QuizPage() {
   // Local state for the current question
   const [localAnswer, setLocalAnswer] = useState<string>("");
   const [showAIChat, setShowAIChat] = useState(false);
+  const [aiLayout, setAiLayout] = useState<AIChatLayout>(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("ai_layout_mode") as AIChatLayout) || "split";
+    }
+    return "split";
+  });
+
+  const handleLayoutChange = (mode: AIChatLayout) => {
+    setAiLayout(mode);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("ai_layout_mode", mode);
+    }
+  };
 
   useEffect(() => {
     async function load() {
@@ -200,36 +213,76 @@ export default function QuizPage() {
     setLocalAnswer("");
   };
 
+  const isSplit = showAIChat && aiLayout === "split";
+  const isBottom = showAIChat && aiLayout === "bottom";
+  const isDrawer = showAIChat && aiLayout === "drawer";
+
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} ${isSplit ? styles.containerWide : ""}`}>
       <header className={styles.header}>
         <div className={styles.headerLeft}>
           <span className={styles.bankName}>{bankName}</span>
           <span className={styles.modeBadge}>{modeLabel}</span>
         </div>
         <div className={styles.headerRight}>
-          <button className={styles.aiBtn} onClick={() => setShowAIChat(true)}>问 AI</button>
-          <button className={styles.endBtn} onClick={handleEnd}>结束</button>
+          <button 
+            type="button"
+            className={`${styles.aiBtn} ${showAIChat ? styles.aiBtnActive : ""}`} 
+            onClick={() => setShowAIChat(!showAIChat)}
+          >
+            {showAIChat ? "收起 AI" : "🤖 问 AI"}
+          </button>
+          <button type="button" className={styles.endBtn} onClick={handleEnd}>结束</button>
         </div>
       </header>
 
-      <QuestionCard
-        question={currentQuestion}
-        questionIndex={currentSession.currentIndex}
-        totalQuestions={orderedIndices.length}
-        mode={currentSession.mode}
-        selectedAnswer={displayAnswer}
-        isSubmitted={isSubmitted}
-        onSelectOption={handleSelectOption}
-        onSubmit={handleSubmit}
-        onNext={() => { setLocalAnswer(""); nextQuestion(); }}
-        onPrev={() => { setLocalAnswer(""); prevQuestion(); }}
-      />
+      <div className={isSplit ? styles.splitGrid : ""}>
+        <div className={styles.questionSection}>
+          <QuestionCard
+            question={currentQuestion}
+            questionIndex={currentSession.currentIndex}
+            totalQuestions={orderedIndices.length}
+            mode={currentSession.mode}
+            selectedAnswer={displayAnswer}
+            isSubmitted={isSubmitted}
+            onSelectOption={handleSelectOption}
+            onSubmit={handleSubmit}
+            onNext={() => { setLocalAnswer(""); nextQuestion(); }}
+            onPrev={() => { setLocalAnswer(""); prevQuestion(); }}
+          />
 
-      {showAIChat && (
+          {isBottom && (
+            <div style={{ marginTop: "1.5rem" }}>
+              <AIChat 
+                question={currentQuestion}
+                userAnswer={displayAnswer}
+                layout="bottom"
+                onLayoutChange={handleLayoutChange}
+                onClose={() => setShowAIChat(false)}
+              />
+            </div>
+          )}
+        </div>
+
+        {isSplit && (
+          <div className={styles.aiSection}>
+            <AIChat 
+              question={currentQuestion}
+              userAnswer={displayAnswer}
+              layout="split"
+              onLayoutChange={handleLayoutChange}
+              onClose={() => setShowAIChat(false)}
+            />
+          </div>
+        )}
+      </div>
+
+      {isDrawer && (
         <AIChat 
           question={currentQuestion}
           userAnswer={displayAnswer}
+          layout="drawer"
+          onLayoutChange={handleLayoutChange}
           onClose={() => setShowAIChat(false)}
         />
       )}

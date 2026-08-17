@@ -21,6 +21,57 @@
   animation: slideIn 0.3s ease forwards;
 }
 
+.panelInline {
+  max-width: none;
+  height: 100%;
+  min-height: 520px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  animation: none;
+  overflow: hidden;
+}
+
+.panelBottom {
+  max-width: none;
+  height: 540px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  animation: none;
+  overflow: hidden;
+}
+
+.layoutToggleGroup {
+  display: flex;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  gap: 2px;
+}
+
+.layoutBtn {
+  background: transparent;
+  border: none;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.layoutBtn:hover {
+  color: var(--color-primary);
+}
+
+.layoutBtnActive {
+  background: var(--color-primary-light, #2563eb);
+  color: white !important;
+  font-weight: 500;
+}
+
 @keyframes slideIn {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }

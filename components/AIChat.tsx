@@ -12,11 +12,15 @@ interface Message {
   content: string;
 }
 
+export type AIChatLayout = "split" | "bottom" | "drawer";
+
 interface AIChatProps {
   questionId?: number;
   questionText?: string;
   question?: Question;
   userAnswer?: string;
+  layout?: AIChatLayout;
+  onLayoutChange?: (layout: AIChatLayout) => void;
   onClose: () => void;
 }
 
@@ -38,6 +42,8 @@ export default function AIChat({
   questionText: propQText, 
   question: propQuestion, 
   userAnswer, 
+  layout = "split",
+  onLayoutChange,
   onClose 
 }: AIChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -288,122 +294,158 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
     }
   }, [activeQuestion, isLoading, messages, propQText, resolvedQId, userAnswer]);
 
-  return (
-    <div 
-      className={styles.overlay}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className={styles.panel}>
-        <div className={styles.header}>
-          <div className={styles.headerTitleGroup}>
-            <h3 className={styles.title}>AI 答疑辅导</h3>
-          </div>
-          <div className={styles.headerActions}>
-            <button 
-              type="button" 
-              className={styles.headerBtn} 
-              onClick={handleClearHistory}
-              title="清空当前题目的对话记录"
-            >
-              🗑️ 清空
-            </button>
-            <button type="button" className={styles.closeBtn} onClick={onClose} title="关闭 (Esc)">
-              ✕
-            </button>
-          </div>
+  const contentPanel = (
+    <div className={`${styles.panel} ${layout === "split" ? styles.panelInline : layout === "bottom" ? styles.panelBottom : ""}`}>
+      <div className={styles.header}>
+        <div className={styles.headerTitleGroup}>
+          <h3 className={styles.title}>AI 答疑辅导</h3>
+          {onLayoutChange && (
+            <div className={styles.layoutToggleGroup}>
+              <button
+                type="button"
+                className={`${styles.layoutBtn} ${layout === "split" ? styles.layoutBtnActive : ""}`}
+                onClick={() => onLayoutChange("split")}
+                title="左右分屏并排"
+              >
+                🗖 分屏
+              </button>
+              <button
+                type="button"
+                className={`${styles.layoutBtn} ${layout === "bottom" ? styles.layoutBtnActive : ""}`}
+                onClick={() => onLayoutChange("bottom")}
+                title="底部嵌入模式"
+              >
+                🗕 底部
+              </button>
+              <button
+                type="button"
+                className={`${styles.layoutBtn} ${layout === "drawer" ? styles.layoutBtnActive : ""}`}
+                onClick={() => onLayoutChange("drawer")}
+                title="右侧悬浮抽屉"
+              >
+                🗗 抽屉
+              </button>
+            </div>
+          )}
         </div>
+        <div className={styles.headerActions}>
+          <button 
+            type="button" 
+            className={styles.headerBtn} 
+            onClick={handleClearHistory}
+            title="清空当前题目的对话记录"
+          >
+            🗑️ 清空
+          </button>
+          <button type="button" className={styles.closeBtn} onClick={onClose} title="关闭 (Esc)">
+            ✕
+          </button>
+        </div>
+      </div>
 
-        <div className={styles.messageList}>
-          {messages.map((msg) => (
+      <div className={styles.messageList}>
+        {messages.map((msg) => (
+          <div
+            key={msg.id}
+            className={`${styles.messageWrapper} ${
+              msg.role === "user" ? styles.wrapperUser : styles.wrapperAssistant
+            }`}
+          >
             <div
-              key={msg.id}
-              className={`${styles.messageWrapper} ${
-                msg.role === "user" ? styles.wrapperUser : styles.wrapperAssistant
+              className={`${styles.bubble} ${
+                msg.role === "user" ? styles.bubbleUser : styles.bubbleAssistant
               }`}
             >
-              <div
-                className={`${styles.bubble} ${
-                  msg.role === "user" ? styles.bubbleUser : styles.bubbleAssistant
-                }`}
-              >
-                <div style={{ wordBreak: "break-word" }}>
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+              <div style={{ wordBreak: "break-word" }}>
+                <ReactMarkdown>{msg.content}</ReactMarkdown>
+              </div>
+              {msg.role === "assistant" && msg.id !== "init" && (
+                <div className={styles.bubbleFooter}>
+                  <button
+                    type="button"
+                    className={styles.copyBtn}
+                    onClick={() => handleCopy(msg.content, msg.id)}
+                  >
+                    {copiedId === msg.id ? "✓ 已复制" : "📋 复制"}
+                  </button>
                 </div>
-                {msg.role === "assistant" && msg.id !== "init" && (
-                  <div className={styles.bubbleFooter}>
-                    <button
-                      type="button"
-                      className={styles.copyBtn}
-                      onClick={() => handleCopy(msg.content, msg.id)}
-                    >
-                      {copiedId === msg.id ? "✓ 已复制" : "📋 复制"}
-                    </button>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
-          ))}
-          {isLoading && (
-            <div className={`${styles.messageWrapper} ${styles.wrapperAssistant}`}>
-              <div className={`${styles.bubble} ${styles.bubbleAssistant}`}>
-                <span className={styles.loadingDots}>AI 正在组织思路解答中...</span>
-              </div>
+          </div>
+        ))}
+        {isLoading && (
+          <div className={`${styles.messageWrapper} ${styles.wrapperAssistant}`}>
+            <div className={`${styles.bubble} ${styles.bubbleAssistant}`}>
+              <span className={styles.loadingDots}>AI 正在组织思路解答中...</span>
             </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
 
-        <div className={styles.quickPrompts}>
-          {QUICK_PROMPTS.map((promptText) => (
-            <button
-              key={promptText}
-              type="button"
-              className={styles.chip}
-              disabled={isLoading}
-              onClick={() => handleSendPrompt(promptText)}
-            >
-              {promptText}
-            </button>
-          ))}
-        </div>
+      <div className={styles.quickPrompts}>
+        {QUICK_PROMPTS.map((promptText) => (
+          <button
+            key={promptText}
+            type="button"
+            className={styles.chip}
+            disabled={isLoading}
+            onClick={() => handleSendPrompt(promptText)}
+          >
+            {promptText}
+          </button>
+        ))}
+      </div>
 
-        <div className={styles.inputArea}>
-          <textarea
-            className={styles.input}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSendPrompt(input);
-              }
-            }}
-            placeholder="输入你的问题... (Enter 发送)"
-            rows={2}
-          />
-          {isLoading ? (
-            <button
-              type="button"
-              className={`${styles.sendBtn} ${styles.stopBtn}`}
-              onClick={handleStop}
-            >
-              🛑 停止
-            </button>
-          ) : (
-            <button
-              type="button"
-              className={styles.sendBtn}
-              onClick={() => handleSendPrompt(input)}
-              disabled={!input.trim()}
-            >
-              发送
-            </button>
-          )}
-        </div>
+      <div className={styles.inputArea}>
+        <textarea
+          className={styles.input}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSendPrompt(input);
+            }
+          }}
+          placeholder="输入你的问题... (Enter 发送)"
+          rows={2}
+        />
+        {isLoading ? (
+          <button
+            type="button"
+            className={`${styles.sendBtn} ${styles.stopBtn}`}
+            onClick={handleStop}
+          >
+            🛑 停止
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={styles.sendBtn}
+            onClick={() => handleSendPrompt(input)}
+            disabled={!input.trim()}
+          >
+            发送
+          </button>
+        )}
       </div>
     </div>
   );
+
+  if (layout === "drawer") {
+    return (
+      <div 
+        className={styles.overlay}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        {contentPanel}
+      </div>
+    );
+  }
+
+  return contentPanel;
 }
 
