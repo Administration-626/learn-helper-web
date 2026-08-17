@@ -390,25 +390,36 @@
 .bubbleFooter {
   display: flex;
   justify-content: flex-end;
-  margin-top: 6px;
-  padding-top: 4px;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 6px;
   border-top: 1px dashed rgba(0, 0, 0, 0.08);
 }
 
 .copyBtn {
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   font-size: 0.75rem;
   color: var(--color-text-secondary);
   cursor: pointer;
-  padding: 2px 6px;
+  padding: 3px 8px;
   border-radius: 4px;
   transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
 
 .copyBtn:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.04);
+  border-color: var(--color-border);
   color: var(--color-primary);
+}
+
+.copyBtnSuccess {
+  color: var(--color-success, #10b981) !important;
+  font-weight: 500;
 }
 
 .stopBtn {

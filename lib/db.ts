@@ -140,3 +140,8 @@ export async function getChatMessages(questionId: number) {
 export async function clearChatMessages(questionId: number) {
   return await db.chatMessages.where('questionId').equals(questionId).delete();
 }
+
+export async function updateQuestionExplanation(questionId: number, explanation: string) {
+  if (!questionId) return;
+  return await db.questions.update(questionId, { explanation });
+}

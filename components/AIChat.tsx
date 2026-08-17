@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import styles from "./AIChat.module.css";
-import { getChatMessages, saveChatMessage, clearChatMessages, getActiveLLMConfig, db } from "@/lib/db";
+import { getChatMessages, saveChatMessage, clearChatMessages, updateQuestionExplanation, getActiveLLMConfig, db } from "@/lib/db";
 import { Question } from "@/lib/types";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -57,6 +57,7 @@ export default function AIChat({
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [savedExplanationId, setSavedExplanationId] = useState<string | null>(null);
   const [activeQuestion, setActiveQuestion] = useState<Question | null>(propQuestion || null);
   const [showScrollBottomBtn, setShowScrollBottomBtn] = useState(false);
   
@@ -161,6 +162,55 @@ export default function AIChat({
     navigator.clipboard.writeText(content);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleSaveAsExplanation = async (content: string, msgId: string) => {
+    if (!resolvedQId) return;
+    try {
+      await updateQuestionExplanation(resolvedQId, content);
+      setActiveQuestion(prev => prev ? { ...prev, explanation: content } : null);
+      setSavedExplanationId(msgId);
+      setTimeout(() => setSavedExplanationId(null), 3000);
+    } catch (err) {
+      console.error("Failed to save explanation:", err);
+    }
+  };
+
+  const handleExportMarkdown = (content: string) => {
+    const qTitle = activeQuestion?.question || propQText || "题目详细解析";
+    const optText = activeQuestion?.options
+      ? Object.entries(activeQuestion.options)
+          .map(([k, v]) => `- **${k}**: ${v}`)
+          .join("\n")
+      : "";
+    const correctAns = activeQuestion?.answer ? `\n\n**【标准答案】**：${activeQuestion.answer}` : "";
+    const userAnsText = userAnswer ? `\n**【你的选择】**：${userAnswer}` : "";
+    
+    const mdDoc = `# 刷题笔记：${qTitle}
+
+## 题目内容
+${qTitle}
+
+${optText ? `### 选项\n${optText}` : ""}${correctAns}${userAnsText}
+
+---
+
+## 🤖 AI 深度解答与考点剖析
+${content}
+
+---
+*导出时间：${new Date().toLocaleString()} · 刷题助手 LearnHelper*
+`;
+    const blob = new Blob([mdDoc], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const filename = `刷题笔记_${activeQuestion?.id ? `第${activeQuestion.id}题` : '题解'}_${Date.now().toString().slice(-4)}.md`;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const handleSendPrompt = useCallback(async (text: string) => {
@@ -390,8 +440,27 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
                       type="button"
                       className={styles.copyBtn}
                       onClick={() => handleCopy(msg.content, msg.id)}
+                      title="复制回答到剪贴板"
                     >
                       {copiedId === msg.id ? "✓ 已复制" : "📋 复制"}
+                    </button>
+                    {resolvedQId > 0 && (
+                      <button
+                        type="button"
+                        className={`${styles.copyBtn} ${savedExplanationId === msg.id ? styles.copyBtnSuccess : ""}`}
+                        onClick={() => handleSaveAsExplanation(msg.content, msg.id)}
+                        title="将此条 AI 解答持久化保存为该题的官方解析"
+                      >
+                        {savedExplanationId === msg.id ? "✓ 已设为本题解析" : "📌 设为本题解析"}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className={styles.copyBtn}
+                      onClick={() => handleExportMarkdown(msg.content)}
+                      title="导出包含题干与此条解析的本地 Markdown 笔记文件"
+                    >
+                      💾 导出笔记
                     </button>
                   </div>
                 )}
