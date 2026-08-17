@@ -18,7 +18,7 @@ export default function SettingsPage() {
   const [showForm, setShowForm] = useState(false);
   
   const [form, setForm] = useState<Partial<LLMConfig>>({
-    name: "", apiUrl: "", apiKey: "", model: "", maxTokens: 4096, temperature: 0.7, topP: 1, isActive: false
+    name: "", apiUrl: "", apiKey: "", model: "", maxTokens: 8192, temperature: 0.7, topP: 1, isActive: false
   });
 
   const [qaPrompt, setQaPrompt] = useState<string>(() => {
@@ -64,7 +64,7 @@ export default function SettingsPage() {
       await addConfig(form as Omit<LLMConfig, 'id'>);
     }
     setShowForm(false);
-    setForm({ name: "", apiUrl: "", apiKey: "", model: "", maxTokens: 4096, temperature: 0.7, topP: 1, isActive: false });
+    setForm({ name: "", apiUrl: "", apiKey: "", model: "", maxTokens: 8192, temperature: 0.7, topP: 1, isActive: false });
   };
 
   const handleEdit = (c: LLMConfig) => {
@@ -121,8 +121,21 @@ export default function SettingsPage() {
             </div>
 
             <div className={styles.formGroup}>
-              <label className={styles.label}>Max Tokens</label>
-              <input className={styles.input} type="number" value={form.maxTokens || 2000} onChange={e => setForm({...form, maxTokens: parseInt(e.target.value, 10) || 2000})} />
+              <label className={styles.label}>
+                Max Tokens（单次最大生成长度，建议 8192）
+              </label>
+              <input
+                className={styles.input}
+                type="number"
+                min="1024"
+                max="32768"
+                step="1024"
+                value={form.maxTokens || 8192}
+                onChange={e => setForm({...form, maxTokens: parseInt(e.target.value, 10) || 8192})}
+              />
+              <span style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', marginTop: '4px', display: 'block' }}>
+                💡 深度思考模型（如 DeepSeek-R1）思考链会占用 Token，设置 8192 可防止长解析被意外截断。
+              </span>
             </div>
 
             <div className={styles.formGroup}>

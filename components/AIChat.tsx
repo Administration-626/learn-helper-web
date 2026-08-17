@@ -32,6 +32,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   reasoning?: string;
+  isTruncated?: boolean;
 }
 
 export type AIChatLayout = "split" | "bottom" | "drawer";
@@ -407,6 +408,7 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
       let assistantReasoning = "";
       let buffer = "";
 
+      let isTruncated = false;
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -425,8 +427,12 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
               if (parsed.error) {
                 throw new Error(parsed.error.message || JSON.stringify(parsed.error));
               }
-              const delta = parsed.choices?.[0]?.delta;
-              const textDelta = delta?.content || parsed.choices?.[0]?.text || "";
+              const choice = parsed.choices?.[0];
+              if (choice?.finish_reason === "length") {
+                isTruncated = true;
+              }
+              const delta = choice?.delta;
+              const textDelta = delta?.content || choice?.text || "";
               const reasoningDelta = delta?.reasoning_content || delta?.reasoning || "";
 
               if (textDelta) assistantText += textDelta;
@@ -445,9 +451,9 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
           setMessages((prev) => {
             const last = prev[prev.length - 1];
             if (last && last.id === assistantMessageId) {
-              return [...prev.slice(0, -1), { ...last, content: currentText, reasoning: currentReasoning }];
+              return [...prev.slice(0, -1), { ...last, content: currentText, reasoning: currentReasoning, isTruncated }];
             } else {
-              return [...prev, { id: assistantMessageId, role: "assistant", content: currentText, reasoning: currentReasoning }];
+              return [...prev, { id: assistantMessageId, role: "assistant", content: currentText, reasoning: currentReasoning, isTruncated }];
             }
           });
         }
@@ -572,6 +578,11 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
                       </ReactMarkdown>
                     </div>
                   )}
+                  {msg.isTruncated && (
+                    <div style={{ fontSize: '0.8rem', color: '#d97706', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      ⚠️ 该回答已达单次最大 Token 上限，点击下方【继续输出】可无缝续写剩余内容
+                    </div>
+                  )}
                   {msg.role === "assistant" && msg.id !== "init" && msg.content && (() => {
                     const currentExpTrim = (activeQuestion?.explanation || "").trim();
                     const msgTrim = msg.content.trim();
@@ -583,6 +594,18 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
 
                     return (
                       <div className={styles.bubbleFooter}>
+                        {msg.isTruncated && (
+                          <button
+                            type="button"
+                            className={styles.copyBtn}
+                            style={{ color: '#d97706', borderColor: '#fcd34d' }}
+                            onClick={() => handleSendPrompt("请接着上一段未写完的内容继续输出，从截断处直接往下写：")}
+                            title="点击让 AI 接着上一段截断处继续输出"
+                          >
+                            <SparklesIcon size={13} />
+                            <span>继续输出</span>
+                          </button>
+                        )}
                         <button
                           type="button"
                           className={styles.copyBtn}

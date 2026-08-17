@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     const payload = {
       model: config.model || 'gpt-3.5-turbo',
       messages,
-      max_tokens: config.maxTokens || 4096,
+      max_tokens: Math.max(config.maxTokens || 8192, 4096),
       temperature: config.temperature ?? 0.7,
       top_p: config.topP ?? 1,
       stream: true,
