@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import type { Question, QuestionBank, MistakeRecord, LLMConfig, ChatMessage } from '@/lib/types';
+import { classifyQuestion } from '@/lib/quiz-engine';
 
 export class LearnHelperDatabase extends Dexie {
   questions!: Table<Question, number>;
@@ -15,7 +16,7 @@ export class LearnHelperDatabase extends Dexie {
       banks: '++id, name, createdAt',
       mistakes: '++id, questionId, bankId, createdAt',
       llmConfigs: '++id, name, isActive',
-      chatMessages: '++id, questionId, createdAt'
+      chatMessages: '++id, questionId, role, createdAt'
     });
   }
 }
@@ -32,11 +33,13 @@ export async function importBank(name: string, questions: Question[]) {
     });
 
     const questionsWithBankId = validQuestions.map(q => {
-      const cleanAns = (q.answer || '').replace(/\s+/g, '').toUpperCase();
+      const cleanAns = (q.answer || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
       const isMulti = q.type === 'multi' || cleanAns.length > 1;
+      const tag = q.tag && q.tag.trim() ? q.tag.trim() : classifyQuestion(q);
       return {
         ...q,
         bankId,
+        tag,
         answer: cleanAns,
         type: (isMulti ? 'multi' : 'single') as 'single' | 'multi'
       };
@@ -52,8 +55,10 @@ export async function getQuestions(bankId: number) {
   return list.map(q => {
     const cleanAns = (q.answer || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
     const isMulti = q.type === 'multi' || cleanAns.length > 1;
+    const tag = q.tag && q.tag.trim() ? q.tag.trim() : classifyQuestion(q);
     return {
       ...q,
+      tag,
       answer: cleanAns,
       type: (isMulti ? 'multi' : 'single') as 'single' | 'multi'
     };

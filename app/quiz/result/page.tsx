@@ -4,8 +4,9 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import { useQuizStore } from "@/stores/quiz";
-import { calculateStats } from "@/lib/quiz-engine";
+import { calculateStats, classifyQuestion } from "@/lib/quiz-engine";
 import { getActiveLLMConfig } from "@/lib/db";
+import { SparklesIcon } from "@/components/Icons";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -20,6 +21,20 @@ export default function QuizResultPage() {
   const [aiAnalysis, setAiAnalysis] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  const stats = React.useMemo(() => {
+    if (!currentSession) return { total: 0, correct: 0, incorrect: 0, accuracy: 0, incorrectQuestions: [] };
+    return calculateStats(currentSession.answers, questions);
+  }, [currentSession, questions]);
+
+  const domainSummary = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    stats.incorrectQuestions.forEach(q => {
+      const tag = q.tag && q.tag.trim() ? q.tag.trim() : classifyQuestion(q);
+      counts[tag] = (counts[tag] || 0) + 1;
+    });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  }, [stats.incorrectQuestions]);
+
   if (!currentSession) {
     return (
       <div className={styles.container}>
@@ -33,8 +48,6 @@ export default function QuizResultPage() {
     );
   }
 
-  const stats = calculateStats(currentSession.answers, questions);
-  
   const accuracyClass = 
     stats.accuracy >= 80 ? styles.accuracyGreen : 
     stats.accuracy >= 60 ? styles.accuracyAmber : 
@@ -65,14 +78,18 @@ export default function QuizResultPage() {
       const customPrompt = typeof window !== "undefined" ? localStorage.getItem("analysisPrompt") : null;
       const systemPrompt = customPrompt || "你是一个专业的考试辅导专家，请根据用户的刷题成绩，分析薄弱知识点、错误原因并给出学习建议。";
 
+      const domainBreakdownText = domainSummary.length > 0
+        ? `\n- 薄弱考点领域分布: ${domainSummary.map(([d, c]) => `${d} (错 ${c} 题)`).join('、')}`
+        : '';
+
       const prompt = `我刚刚完成了一次刷题测试：
 - 总题数：${stats.total} 题
 - 答对：${stats.correct} 题
 - 答错：${stats.incorrect} 题
-- 正确率：${stats.accuracy}%
+- 正确率：${stats.accuracy}%${domainBreakdownText}
 
 错题列表：
-${stats.incorrectQuestions.map((q, idx) => `${idx + 1}. [${q.tag || "通用"}] ${q.question}\n我的回答: ${currentSession.answers[q.id!] || "未答"}, 正确答案: ${q.answer}\n解析: ${q.explanation || "无"}`).join("\n\n")}
+${stats.incorrectQuestions.map((q, idx) => `${idx + 1}. [${q.tag || classifyQuestion(q)}] ${q.question}\n我的回答: ${currentSession.answers[q.id!] || "未答"}, 正确答案: ${q.answer}\n解析: ${q.explanation || "无"}`).join("\n\n")}
 
 请对我的答题情况进行系统分析，指出薄弱知识点，并给出针对性的复习建议。`;
       
@@ -151,14 +168,27 @@ ${stats.incorrectQuestions.map((q, idx) => `${idx + 1}. [${q.tag || "通用"}] $
           </div>
         </div>
 
+        {domainSummary.length > 0 && (
+          <div style={{ marginTop: '1rem', padding: '0.75rem 1rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem' }}>
+            <span style={{ fontWeight: 600, color: 'var(--color-primary)', marginRight: '8px' }}>📊 薄弱考点分布:</span>
+            {domainSummary.map(([d, c], i) => (
+              <span key={d} style={{ marginRight: '10px', color: 'var(--color-text-secondary)' }}>
+                {d} <strong style={{ color: 'var(--color-error)' }}>({c}题)</strong>{i < domainSummary.length - 1 ? '、' : ''}
+              </span>
+            ))}
+          </div>
+        )}
+
         <div className={styles.actions}>
           <button 
             type="button"
             className={`${styles.btn} ${styles.btnAi}`} 
             onClick={requestAiAnalysis}
             disabled={isAnalyzing}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
-            {isAnalyzing ? "正在智能分析..." : "🤖 AI 智能分析"}
+            <SparklesIcon size={14} />
+            <span>{isAnalyzing ? "正在智能分析..." : "AI 智能分析"}</span>
           </button>
           <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={handleRestart}>再来一次</button>
           <button type="button" className={`${styles.btn} ${styles.btnSecondary}`} onClick={handleHome}>返回首页</button>
@@ -180,19 +210,24 @@ ${stats.incorrectQuestions.map((q, idx) => `${idx + 1}. [${q.tag || "通用"}] $
         <div className={styles.mistakesSection}>
           <h2 className={styles.sectionTitle}>错题回顾 ({stats.incorrectQuestions.length})</h2>
           <div className={styles.mistakeList}>
-            {stats.incorrectQuestions.map((q, idx) => (
-              <div key={q.id} className={styles.mistakeCard}>
-                <div 
-                  className={styles.mistakeHeader} 
-                  onClick={() => setExpandedMistake(expandedMistake === q.id ? null : q.id!)}
-                >
-                  <span className={styles.mistakeQuestion}>
-                    {idx + 1}. {q.question}
-                  </span>
-                  <span className={styles.expandIcon}>
-                    {expandedMistake === q.id ? "▲" : "▼"}
-                  </span>
-                </div>
+            {stats.incorrectQuestions.map((q, idx) => {
+              const tag = q.tag && q.tag.trim() ? q.tag.trim() : classifyQuestion(q);
+              return (
+                <div key={q.id} className={styles.mistakeCard}>
+                  <div 
+                    className={styles.mistakeHeader} 
+                    onClick={() => setExpandedMistake(expandedMistake === q.id ? null : q.id!)}
+                  >
+                    <span className={styles.mistakeQuestion}>
+                      <span style={{ fontSize: '0.78rem', padding: '2px 6px', background: 'rgba(37, 99, 235, 0.08)', color: '#1e40af', borderRadius: '4px', marginRight: '6px', border: '1px solid rgba(37, 99, 235, 0.2)' }}>
+                        {tag}
+                      </span>
+                      {idx + 1}. {q.question}
+                    </span>
+                    <span className={styles.expandIcon}>
+                      {expandedMistake === q.id ? "▲" : "▼"}
+                    </span>
+                  </div>
                 
                 {expandedMistake === q.id && (
                   <div className={styles.mistakeDetails}>
@@ -219,7 +254,8 @@ ${stats.incorrectQuestions.map((q, idx) => `${idx + 1}. [${q.tag || "通用"}] $
                   </div>
                 )}
               </div>
-            ))}
+            );
+          })}
           </div>
         </div>
       )}

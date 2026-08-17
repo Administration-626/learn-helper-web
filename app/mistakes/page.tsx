@@ -12,6 +12,7 @@ import rehypeKatex from "rehype-katex";
 import { formatCjkMarkdown } from "@/lib/markdown";
 import { useQuizStore } from "@/stores/quiz";
 import { SparklesIcon, TrashIcon } from "@/components/Icons";
+import { classifyQuestion } from "@/lib/quiz-engine";
 
 type MistakeItem = MistakeRecord & { questionData?: Question, bankName?: string };
 
@@ -20,6 +21,7 @@ export default function MistakesPage() {
   const [mistakes, setMistakes] = useState<MistakeItem[]>([]);
   const [banks, setBanks] = useState<QuestionBank[]>([]);
   const [selectedBank, setSelectedBank] = useState<number | "all">("all");
+  const [selectedDomain, setSelectedDomain] = useState<string>("all");
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [chatQuestion, setChatQuestion] = useState<Question | null>(null);
 
@@ -53,9 +55,31 @@ export default function MistakesPage() {
     setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleReview = () => {
-    if (mistakes.length === 0) return;
-    const questionsToReview = mistakes.map(m => m.questionData!).filter(Boolean);
+  const domainStats = React.useMemo(() => {
+    const map = new Map<string, number>();
+    mistakes.forEach(m => {
+      const q = m.questionData;
+      if (!q) return;
+      const tag = q.tag && q.tag.trim() ? q.tag.trim() : classifyQuestion(q);
+      map.set(tag, (map.get(tag) || 0) + 1);
+    });
+    return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
+  }, [mistakes]);
+
+  const filteredMistakes = React.useMemo(() => {
+    if (selectedDomain === "all") return mistakes;
+    return mistakes.filter(m => {
+      const q = m.questionData;
+      if (!q) return false;
+      const tag = q.tag && q.tag.trim() ? q.tag.trim() : classifyQuestion(q);
+      return tag === selectedDomain;
+    });
+  }, [mistakes, selectedDomain]);
+
+  const handleReview = (reviewFilteredOnly: boolean = false) => {
+    const targetList = reviewFilteredOnly && selectedDomain !== "all" ? filteredMistakes : mistakes;
+    if (targetList.length === 0) return;
+    const questionsToReview = targetList.map(m => m.questionData!).filter(Boolean);
     useQuizStore.getState().startMistakesQuiz(questionsToReview);
     router.push('/quiz');
   };
@@ -68,35 +92,96 @@ export default function MistakesPage() {
           <select 
             className={styles.select}
             value={selectedBank}
-            onChange={(e) => setSelectedBank(e.target.value === "all" ? "all" : Number(e.target.value))}
+            onChange={(e) => {
+              setSelectedBank(e.target.value === "all" ? "all" : Number(e.target.value));
+              setSelectedDomain("all");
+            }}
           >
             <option value="all">所有题库</option>
             {banks.map(b => (
               <option key={b.id} value={b.id}>{b.name}</option>
             ))}
           </select>
-          <button type="button" className={styles.button} onClick={handleReview} disabled={mistakes.length === 0}>
-            一键复习
+          <button type="button" className={styles.button} onClick={() => handleReview(false)} disabled={mistakes.length === 0}>
+            一键复习全部 ({mistakes.length})
           </button>
         </div>
       </div>
+
+      {mistakes.length > 0 && (
+        <div className={styles.domainOverview}>
+          <div className={styles.domainHeader}>
+            <div className={styles.domainTitle}>
+              <span>📊 知识薄弱领域分析</span>
+              <span className={styles.domainSubtext}>
+                （按错误频次排序，点击可筛选专项强化）
+              </span>
+            </div>
+            {selectedDomain !== "all" && (
+              <button
+                type="button"
+                className={styles.button}
+                style={{ padding: '2px 8px', fontSize: '0.8rem' }}
+                onClick={() => handleReview(true)}
+              >
+                仅复习【{selectedDomain}】({filteredMistakes.length}题)
+              </button>
+            )}
+          </div>
+          <div className={styles.domainPills}>
+            <button
+              type="button"
+              className={`${styles.domainPill} ${selectedDomain === "all" ? styles.domainPillActive : ""}`}
+              onClick={() => setSelectedDomain("all")}
+            >
+              <span>全部领域</span>
+              <span className={styles.domainCount}>{mistakes.length}</span>
+            </button>
+            {domainStats.map(([domain, count], idx) => (
+              <button
+                key={domain}
+                type="button"
+                className={`${styles.domainPill} ${selectedDomain === domain ? styles.domainPillActive : ""}`}
+                onClick={() => setSelectedDomain(selectedDomain === domain ? "all" : domain)}
+              >
+                <span>{domain}</span>
+                <span className={styles.domainCount}>{count}</span>
+                {idx === 0 && count >= 2 && <span title="错题集中领域">⚠️</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {mistakes.length === 0 ? (
         <div className={styles.empty}>
           <h2>暂无错题记录 🎉</h2>
           <p>继续保持好成绩！</p>
         </div>
+      ) : filteredMistakes.length === 0 ? (
+        <div className={styles.empty} style={{ padding: '2rem' }}>
+          <h3>该领域下暂无错题</h3>
+          <button
+            type="button"
+            className={styles.button}
+            style={{ marginTop: '1rem' }}
+            onClick={() => setSelectedDomain("all")}
+          >
+            返回全部领域
+          </button>
+        </div>
       ) : (
         <div className={styles.list}>
-          {mistakes.map(m => {
+          {filteredMistakes.map(m => {
             const q = m.questionData!;
             const isExpanded = expanded[m.id!];
+            const tag = q.tag && q.tag.trim() ? q.tag.trim() : classifyQuestion(q);
             return (
               <div key={m.id} className={styles.card}>
                 <div className={styles.cardHeader}>
                   <div className={styles.tags}>
+                    <span className={styles.domainBadge}>{tag}</span>
                     {m.bankName && <span className={styles.tag}>{m.bankName}</span>}
-                    {q.tag && <span className={styles.tag}>{q.tag}</span>}
                   </div>
                   <button type="button" className={styles.expandBtn} onClick={() => toggleExpand(m.id!)}>
                     {isExpanded ? "收起" : "展开详情"}

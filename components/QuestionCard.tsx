@@ -88,7 +88,6 @@ export default function QuestionCard({
           第 {questionIndex + 1} / {totalQuestions} 题
         </span>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-          {question.tag && <span className={styles.tag}>{question.tag}</span>}
           <span className={styles.tag}>
             {typeLabel}
           </span>
