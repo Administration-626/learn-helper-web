@@ -175,49 +175,66 @@ export default function AIChat({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleToggleExplanation = async (content: string, msgId: string) => {
+  const handleAdoptExplanation = async (content: string, msgId: string) => {
     if (!resolvedQId || isTogglingExplanationRef.current) return;
     isTogglingExplanationRef.current = true;
 
     try {
-      if (savedExplanationId === msgId) {
-        // Rollback / Cancel: revert back to original question explanation
-        const fallback = originalExplanation || "";
-        await updateQuestionExplanation(resolvedQId, fallback);
-        setActiveQuestion(prev => prev ? { ...prev, explanation: fallback } : null);
-        useQuizStore.getState().updateQuestionExplanation(resolvedQId, fallback);
-        setSavedExplanationId(null);
-      } else {
-        // Apply: save this AI content as question explanation
-        if (originalExplanation === null && activeQuestion) {
-          setOriginalExplanation(activeQuestion.explanation || "");
-        }
-        await updateQuestionExplanation(resolvedQId, content);
-        setActiveQuestion(prev => prev ? { ...prev, explanation: content } : null);
-        useQuizStore.getState().updateQuestionExplanation(resolvedQId, content);
-        setSavedExplanationId(msgId);
+      if (originalExplanation === null && activeQuestion) {
+        setOriginalExplanation(activeQuestion.explanation || "");
       }
+      await updateQuestionExplanation(resolvedQId, content);
+      setActiveQuestion(prev => prev ? { ...prev, explanation: content } : null);
+      useQuizStore.getState().updateQuestionExplanation(resolvedQId, content);
+      setSavedExplanationId(msgId);
     } catch (err) {
-      console.error("Failed to toggle explanation:", err);
+      console.error("Failed to adopt explanation:", err);
     } finally {
-      // 500ms cooldown to prevent rapid multi-clicks
       setTimeout(() => {
         isTogglingExplanationRef.current = false;
       }, 500);
     }
   };
 
-  const handleAppendExplanation = async (content: string) => {
-    if (!resolvedQId) return;
-    const currentExp = activeQuestion?.explanation?.trim() || "";
-    const merged = currentExp ? `${currentExp}\n\n---\n\n${content}` : content;
+  const handleCancelAdopt = async () => {
+    if (!resolvedQId || isTogglingExplanationRef.current) return;
+    isTogglingExplanationRef.current = true;
+
     try {
+      const fallback = originalExplanation || "";
+      await updateQuestionExplanation(resolvedQId, fallback);
+      setActiveQuestion(prev => prev ? { ...prev, explanation: fallback } : null);
+      useQuizStore.getState().updateQuestionExplanation(resolvedQId, fallback);
+      setSavedExplanationId(null);
+    } catch (err) {
+      console.error("Failed to cancel adoption:", err);
+    } finally {
+      setTimeout(() => {
+        isTogglingExplanationRef.current = false;
+      }, 500);
+    }
+  };
+
+  const handleAppendExplanation = async (content: string, msgId: string) => {
+    if (!resolvedQId || isTogglingExplanationRef.current) return;
+    isTogglingExplanationRef.current = true;
+
+    try {
+      if (originalExplanation === null && activeQuestion) {
+        setOriginalExplanation(activeQuestion.explanation || "");
+      }
+      const currentExp = activeQuestion?.explanation?.trim() || "";
+      const merged = currentExp ? `${currentExp}\n\n---\n\n${content}` : content;
       await updateQuestionExplanation(resolvedQId, merged);
       setActiveQuestion(prev => prev ? { ...prev, explanation: merged } : null);
       useQuizStore.getState().updateQuestionExplanation(resolvedQId, merged);
-      alert("✓ 已成功将此条 AI 解答追加到题目解析中！");
+      setSavedExplanationId(msgId);
     } catch (err) {
       console.error("Failed to append explanation:", err);
+    } finally {
+      setTimeout(() => {
+        isTogglingExplanationRef.current = false;
+      }, 500);
     }
   };
 
@@ -479,66 +496,93 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
                 <div className={styles.markdownBody} style={{ wordBreak: "break-word" }}>
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{formatCjkMarkdown(msg.content)}</ReactMarkdown>
                 </div>
-                {msg.role === "assistant" && msg.id !== "init" && (
-                  <div className={styles.bubbleFooter}>
-                    <button
-                      type="button"
-                      className={styles.copyBtn}
-                      onClick={() => handleCopy(msg.content, msg.id)}
-                      title="复制回答到剪贴板"
-                    >
-                      {copiedId === msg.id ? "✓ 已复制" : "📋 复制"}
-                    </button>
-                    {resolvedQId > 0 && (
-                      <>
-                        <button
-                          type="button"
-                          className={`${styles.copyBtn} ${
-                            savedExplanationId === msg.id ? styles.savedBtnActive : ""
-                          }`}
-                          onClick={() => handleToggleExplanation(msg.content, msg.id)}
-                          onMouseEnter={() => setHoveredSavedId(msg.id)}
-                          onMouseLeave={() => setHoveredSavedId(null)}
-                          title={
-                            savedExplanationId === msg.id
-                              ? "点击取消并恢复题目的原始解析"
-                              : "将此条 AI 解答持久化保存为该题的官方解析"
-                          }
-                        >
-                          {savedExplanationId === msg.id
-                            ? hoveredSavedId === msg.id
-                              ? "✕ 取消设为解析"
-                              : "✓ 已设为本题解析"
-                            : "📌 设为解析"}
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.copyBtn}
-                          onClick={() => handleAppendExplanation(msg.content)}
-                          title="将此条 AI 解答追加合并到现有题目解析的末尾"
-                        >
-                          ➕ 追加解析
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.copyBtn}
-                          onClick={() => setEditModalText(msg.content)}
-                          title="打开解析编辑器，自由组合与精修多轮 AI 解答"
-                        >
-                          ✏️ 编辑组合
-                        </button>
-                      </>
-                    )}
-                    <button
-                      type="button"
-                      className={styles.copyBtn}
-                      onClick={() => handleExportMarkdown(msg.content)}
-                      title="导出包含题干与此条解析的本地 Markdown 笔记文件"
-                    >
-                      💾 导出笔记
-                    </button>
-                  </div>
-                )}
+                {msg.role === "assistant" && msg.id !== "init" && (() => {
+                  const currentExpTrim = (activeQuestion?.explanation || "").trim();
+                  const msgTrim = msg.content.trim();
+                  const isAdopted = savedExplanationId === msg.id || (currentExpTrim.length > 0 && currentExpTrim === msgTrim);
+                  const hasOtherAdopted = !isAdopted && (
+                    (savedExplanationId !== null && savedExplanationId !== msg.id) ||
+                    (currentExpTrim.length > 0 && currentExpTrim !== (originalExplanation || "").trim())
+                  );
+
+                  return (
+                    <div className={styles.bubbleFooter}>
+                      <button
+                        type="button"
+                        className={styles.copyBtn}
+                        onClick={() => handleCopy(msg.content, msg.id)}
+                        title="复制回答到剪贴板"
+                      >
+                        {copiedId === msg.id ? "✓ 已复制" : "📋 复制"}
+                      </button>
+
+                      {resolvedQId > 0 && (
+                        <>
+                          {isAdopted ? (
+                            /* State B: Already adopted this message */
+                            <button
+                              type="button"
+                              className={`${styles.copyBtn} ${styles.savedBtnActive}`}
+                              onClick={handleCancelAdopt}
+                              onMouseEnter={() => setHoveredSavedId(msg.id)}
+                              onMouseLeave={() => setHoveredSavedId(null)}
+                              title="点击取消采纳，恢复题目原始解析"
+                            >
+                              {hoveredSavedId === msg.id ? "✕ 取消采纳" : "✓ 已采纳为题解"}
+                            </button>
+                          ) : hasOtherAdopted ? (
+                            /* State C: Another answer is adopted, provide Overwrite or Append or Edit */
+                            <>
+                              <button
+                                type="button"
+                                className={styles.copyBtn}
+                                onClick={() => handleAdoptExplanation(msg.content, msg.id)}
+                                title="将此回答覆盖为最新的本题题解"
+                              >
+                                🔄 覆盖题解
+                              </button>
+                              <button
+                                type="button"
+                                className={styles.copyBtn}
+                                onClick={() => handleAppendExplanation(msg.content, msg.id)}
+                                title="将此回答追加合并到现有题解的末尾"
+                              >
+                                ➕ 追加合并
+                              </button>
+                              <button
+                                type="button"
+                                className={styles.copyBtn}
+                                onClick={() => setEditModalText(msg.content)}
+                                title="打开编辑器自由精修组合"
+                              >
+                                ✏️ 精修组合
+                              </button>
+                            </>
+                          ) : (
+                            /* State A: Initial state, adopt this message directly */
+                            <button
+                              type="button"
+                              className={styles.copyBtn}
+                              onClick={() => handleAdoptExplanation(msg.content, msg.id)}
+                              title="将此条 AI 解答采纳为该题的标准题解"
+                            >
+                              📌 采纳为题解
+                            </button>
+                          )}
+                        </>
+                      )}
+
+                      <button
+                        type="button"
+                        className={styles.copyBtn}
+                        onClick={() => handleExportMarkdown(msg.content)}
+                        title="导出包含题干与此条解析的本地 Markdown 笔记文件"
+                      >
+                        💾 导出笔记
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           ))}
