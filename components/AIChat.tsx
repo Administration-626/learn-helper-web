@@ -5,6 +5,7 @@ import styles from "./AIChat.module.css";
 import { getChatMessages, saveChatMessage, clearChatMessages, getActiveLLMConfig, db } from "@/lib/db";
 import { Question } from "@/lib/types";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Message {
   id: string;
@@ -381,7 +382,7 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
                 }`}
               >
                 <div className={styles.markdownBody} style={{ wordBreak: "break-word" }}>
-                  <ReactMarkdown>{formatCjkMarkdown(msg.content)}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{formatCjkMarkdown(msg.content)}</ReactMarkdown>
                 </div>
                 {msg.role === "assistant" && msg.id !== "init" && (
                   <div className={styles.bubbleFooter}>

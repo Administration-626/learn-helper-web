@@ -7,6 +7,7 @@ import { useQuizStore } from "@/stores/quiz";
 import { calculateStats } from "@/lib/quiz-engine";
 import { getActiveLLMConfig } from "@/lib/db";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 function formatCjkMarkdown(text: string): string {
   if (!text) return "";
@@ -170,7 +171,7 @@ ${stats.incorrectQuestions.map((q, idx) => `${idx + 1}. [${q.tag || "通用"}] $
         <div className={styles.aiAnalysis}>
           <h3>AI 学习分析与建议</h3>
           <div className={styles.aiContent} style={{ lineHeight: 1.7 }}>
-            <ReactMarkdown>{formatCjkMarkdown(aiAnalysis)}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{formatCjkMarkdown(aiAnalysis)}</ReactMarkdown>
           </div>
         </div>
       )}
