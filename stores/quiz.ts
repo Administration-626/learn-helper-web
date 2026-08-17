@@ -14,6 +14,7 @@ interface QuizState {
   startMistakesQuiz: (mistakeQuestions: Question[]) => void;
   resumeQuiz: () => Promise<void>;
   answerQuestion: (questionId: number, answer: string) => Promise<void>;
+  updateQuestionExplanation: (questionId: number, explanation: string) => void;
   nextQuestion: () => void;
   prevQuestion: () => void;
   finishQuiz: () => void;
@@ -90,6 +91,14 @@ export const useQuizStore = create<QuizState>()(
             answers: newAnswers
           }
         });
+      },
+
+      updateQuestionExplanation: (questionId: number, explanation: string) => {
+        set((state) => ({
+          questions: state.questions.map((q) =>
+            q.id === questionId ? { ...q, explanation } : q
+          ),
+        }));
       },
 
       nextQuestion: () => {

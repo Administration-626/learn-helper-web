@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import styles from "./AIChat.module.css";
 import { getChatMessages, saveChatMessage, clearChatMessages, updateQuestionExplanation, getActiveLLMConfig, db } from "@/lib/db";
 import { Question } from "@/lib/types";
+import { useQuizStore } from "@/stores/quiz";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -87,6 +88,10 @@ export default function AIChat({
               content: m.content,
             }))
           );
+          if (currentQ?.explanation) {
+            const match = history.find(m => m.role === "assistant" && m.content === currentQ.explanation);
+            if (match && match.id) setSavedExplanationId(String(match.id));
+          }
         } else {
           const qTitle = currentQ?.question || propQText || "这道题目";
           setMessages([
@@ -169,8 +174,8 @@ export default function AIChat({
     try {
       await updateQuestionExplanation(resolvedQId, content);
       setActiveQuestion(prev => prev ? { ...prev, explanation: content } : null);
+      useQuizStore.getState().updateQuestionExplanation(resolvedQId, content);
       setSavedExplanationId(msgId);
-      setTimeout(() => setSavedExplanationId(null), 3000);
     } catch (err) {
       console.error("Failed to save explanation:", err);
     }
