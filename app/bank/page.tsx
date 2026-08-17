@@ -10,8 +10,10 @@ export default function BankManagementPage() {
   const [banks, setBanks] = useState<QuestionBank[]>([]);
 
   const loadBanks = React.useCallback(() => {
-    db.banks.orderBy("createdAt").reverse().toArray().then(data => {
-      setBanks(data);
+    db.banks.toArray().then(data => {
+      setBanks(data.sort((a, b) => b.createdAt - a.createdAt));
+    }).catch(err => {
+      console.error("Failed to load banks:", err);
     });
   }, []);
 

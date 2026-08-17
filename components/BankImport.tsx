@@ -87,7 +87,7 @@ export default function BankImport({ onImportSuccess }: BankImportProps) {
 
     try {
       const res = await fetch("/questions.json");
-      if (!res.ok) throw new Error("加载内置题库文件失败");
+      if (!res.ok) throw new Error(`加载内置题库文件失败 (HTTP ${res.status})`);
       const data = await res.json();
       
       await db.importBank("系统架构设计师·真题题库", data);
@@ -110,18 +110,18 @@ export default function BankImport({ onImportSuccess }: BankImportProps) {
           onClick={handleLoadBuiltIn}
           disabled={isImporting}
           style={{
-            background: 'var(--color-accent)',
+            background: isImporting ? 'var(--color-border)' : 'var(--color-accent)',
             color: 'white',
             border: 'none',
             borderRadius: 'var(--radius-sm)',
-            padding: '6px 14px',
+            padding: '8px 16px',
             fontSize: '0.88rem',
             fontWeight: 600,
-            cursor: 'pointer',
+            cursor: isImporting ? 'not-allowed' : 'pointer',
             boxShadow: 'var(--shadow-sm)'
           }}
         >
-          ⚡ 一键载入内置题库 (609题)
+          {isImporting ? "⏳ 正在载入题库..." : "⚡ 一键载入内置题库 (609题)"}
         </button>
       </div>
       

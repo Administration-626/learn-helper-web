@@ -4,14 +4,15 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import { useQuizStore } from "@/stores/quiz";
-import { db } from "@/lib/db";
+import { db, getQuestions } from "@/lib/db";
+import { generateQuestionOrder } from "@/lib/quiz-engine";
 import type { QuestionBank, QuizMode } from "@/lib/types";
 import QuestionCard from "@/components/QuestionCard";
 import AIChat from "@/components/AIChat";
 
 export default function QuizPage() {
   const router = useRouter();
-  const { currentSession, questions, orderedIndices, startQuiz, resumeQuiz, answerQuestion, nextQuestion, prevQuestion, finishQuiz, resetQuiz } = useQuizStore();
+  const { currentSession, questions, orderedIndices, startQuiz, answerQuestion, nextQuestion, prevQuestion, finishQuiz, resetQuiz } = useQuizStore();
   
   const [banks, setBanks] = useState<QuestionBank[]>([]);
   const [selectedBankId, setSelectedBankId] = useState<number | "">("");
@@ -22,31 +23,39 @@ export default function QuizPage() {
   const [localAnswer, setLocalAnswer] = useState<string>("");
   const [showAIChat, setShowAIChat] = useState(false);
 
-  const bankId = currentSession?.bankId;
-  const questionsCount = questions.length;
-
   useEffect(() => {
-    let isMounted = true;
-    const init = async () => {
-      const allBanks = await db.banks.toArray();
-      if (!isMounted) return;
-      setBanks(allBanks);
-      if (allBanks.length > 0 && selectedBankId === "") {
-        setSelectedBankId(allBanks[0].id!);
-      }
-
-      if (bankId !== undefined && questionsCount === 0) {
-        if (bankId === -1) {
-          resetQuiz();
-        } else {
-          await resumeQuiz();
+    async function load() {
+      try {
+        const allBanks = await db.banks.toArray();
+        setBanks(allBanks);
+        if (allBanks.length > 0) {
+          setSelectedBankId(prev => (prev === "" ? allBanks[0].id! : prev));
         }
+
+        const state = useQuizStore.getState();
+        if (state.currentSession) {
+          if (state.currentSession.bankId === -1) {
+            if (state.questions.length === 0) {
+              state.resetQuiz();
+            }
+          } else if (state.questions.length === 0) {
+            const qs = await getQuestions(state.currentSession.bankId);
+            if (qs.length === 0) {
+              state.resetQuiz();
+            } else {
+              const ordered = generateQuestionOrder(qs.length, state.currentSession.mode, state.currentSession.seed);
+              useQuizStore.setState({ questions: qs, orderedIndices: ordered });
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to init quiz:", err);
+      } finally {
+        setIsLoading(false);
       }
-      if (isMounted) setIsLoading(false);
-    };
-    init();
-    return () => { isMounted = false; };
-  }, [bankId, questionsCount, resetQuiz, resumeQuiz, selectedBankId]);
+    }
+    load();
+  }, []);
 
   const handleStart = async () => {
     if (selectedBankId === "") return;
