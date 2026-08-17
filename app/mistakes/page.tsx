@@ -103,7 +103,13 @@ export default function MistakesPage() {
                 </div>
                 
                 <div className={styles.question}>
-                  {q.number ? `${q.number}. ` : ""}{q.question}
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                    components={{ p: ({ children }) => <span>{children}</span> }}
+                  >
+                    {formatCjkMarkdown((q.number ? `${q.number}. ` : "") + q.question)}
+                  </ReactMarkdown>
                 </div>
 
                 <div className={styles.details}>
@@ -125,7 +131,14 @@ export default function MistakesPage() {
                           
                           return (
                             <div key={key} className={optionClass}>
-                              <strong>{key}.</strong> {text}
+                              <strong>{key}.</strong>{" "}
+                              <ReactMarkdown
+                                remarkPlugins={[remarkGfm, remarkMath]}
+                                rehypePlugins={[rehypeKatex]}
+                                components={{ p: ({ children }) => <span>{children}</span> }}
+                              >
+                                {formatCjkMarkdown(text)}
+                              </ReactMarkdown>
                             </div>
                           );
                         })}

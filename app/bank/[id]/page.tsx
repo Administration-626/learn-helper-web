@@ -3,6 +3,11 @@ import React, { useEffect, useState, use } from "react";
 import styles from "./page.module.css";
 import { db, getQuestions } from "@/lib/db";
 import { Question, QuestionBank } from "@/lib/types";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import { formatCjkMarkdown } from "@/lib/markdown";
 
 export default function BankDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -154,7 +159,13 @@ export default function BankDetailPage({ params }: { params: Promise<{ id: strin
                     <span style={{ color: 'var(--color-text-secondary)', marginRight: '8px' }}>
                       {q.number ? `${q.number}.` : ""} {q.tag ? `[${q.tag}]` : ""}
                     </span>
-                    {q.question}
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm, remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                      components={{ p: ({ children }) => <span>{children}</span> }}
+                    >
+                      {formatCjkMarkdown(q.question)}
+                    </ReactMarkdown>
                   </div>
                   <div className={styles.actions}>
                     <button className={styles.btn} onClick={() => setExpanded({...expanded, [q.id!]: !expanded[q.id!]})}>
@@ -169,12 +180,25 @@ export default function BankDetailPage({ params }: { params: Promise<{ id: strin
                   <div className={styles.options}>
                     {Object.entries(q.options || {}).map(([k, v]) => (
                       <div key={k} className={`${styles.option} ${q.answer.includes(k) ? styles.correctOption : ""}`}>
-                        <strong>{k}.</strong> {v}
+                        <strong>{k}.</strong>{" "}
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm, remarkMath]}
+                          rehypePlugins={[rehypeKatex]}
+                          components={{ p: ({ children }) => <span>{children}</span> }}
+                        >
+                          {formatCjkMarkdown(v)}
+                        </ReactMarkdown>
                       </div>
                     ))}
                     {q.explanation && (
                       <div style={{ marginTop: '8px', padding: '8px', background: '#f8fafc', borderRadius: '4px' }}>
-                        <strong>解析：</strong> {q.explanation}
+                        <strong>解析：</strong>
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm, remarkMath]}
+                          rehypePlugins={[rehypeKatex]}
+                        >
+                          {formatCjkMarkdown(q.explanation)}
+                        </ReactMarkdown>
                       </div>
                     )}
                   </div>

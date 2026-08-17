@@ -87,9 +87,17 @@ export default function QuestionCard({
       </div>
 
       <div className={styles.content}>
-        <p className={styles.questionText}>
-          {question.number ? `${question.number}. ` : ""}{question.question}
-        </p>
+        <div className={styles.questionText}>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[rehypeKatex]}
+            components={{
+              p: ({ children }) => <span>{children}</span>,
+            }}
+          >
+            {formatCjkMarkdown((question.number ? `${question.number}. ` : "") + question.question)}
+          </ReactMarkdown>
+        </div>
 
         <div className={styles.options}>
           {optionEntries.map(([key, text]) => (
@@ -101,7 +109,17 @@ export default function QuestionCard({
               disabled={(!isExam && isSubmitted) || isRecite}
             >
               <span className={styles.optionLabel}>{key}</span>
-              <span className={styles.optionText}>{text}</span>
+              <span className={styles.optionText}>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm, remarkMath]}
+                  rehypePlugins={[rehypeKatex]}
+                  components={{
+                    p: ({ children }) => <span>{children}</span>,
+                  }}
+                >
+                  {formatCjkMarkdown(text)}
+                </ReactMarkdown>
+              </span>
             </button>
           ))}
         </div>
