@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import styles from "./AIChat.module.css";
-import { getChatMessages, saveChatMessage, getActiveLLMConfig } from "@/lib/db";
+import { getChatMessages, saveChatMessage, getActiveLLMConfig, db } from "@/lib/db";
+import { Question } from "@/lib/types";
 import ReactMarkdown from "react-markdown";
 
 interface Message {
@@ -12,21 +13,44 @@ interface Message {
 }
 
 interface AIChatProps {
-  questionId: number;
-  questionText: string;
+  questionId?: number;
+  questionText?: string;
+  question?: Question;
   onClose: () => void;
 }
 
-export default function AIChat({ questionId, questionText, onClose }: AIChatProps) {
+const QUICK_PROMPTS = [
+  "💡 为什么选这个答案？",
+  "🔍 逐个选项分析对错",
+  "📖 本题核心考点剖析",
+  "🎯 解题技巧与速记口诀"
+];
+
+let idCounter = 0;
+function createMessageId(): string {
+  idCounter += 1;
+  return `${Date.now()}-${idCounter}`;
+}
+
+export default function AIChat({ questionId: propQId, questionText: propQText, question: propQuestion, onClose }: AIChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [activeQuestion, setActiveQuestion] = useState<Question | null>(propQuestion || null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const resolvedQId = propQuestion?.id || propQId || 0;
+
   useEffect(() => {
-    const loadHistory = async () => {
+    const loadQuestionAndHistory = async () => {
+      let currentQ = propQuestion;
+      if (!currentQ && resolvedQId) {
+        currentQ = await db.questions.get(resolvedQId);
+        if (currentQ) setActiveQuestion(currentQ);
+      }
+
       try {
-        const history = await getChatMessages(questionId);
+        const history = await getChatMessages(resolvedQId);
         if (history && history.length > 0) {
           setMessages(
             history.map((m, idx) => ({
@@ -36,11 +60,12 @@ export default function AIChat({ questionId, questionText, onClose }: AIChatProp
             }))
           );
         } else {
+          const qTitle = currentQ?.question || propQText || "这道题目";
           setMessages([
             {
               id: "init",
               role: "assistant",
-              content: `你好！针对这道题目："${questionText}"，有什么需要我帮你解答或解析的吗？`,
+              content: `你好！我是你的 AI 辅导老师 🤖\n\n针对当前题目：**"${qTitle}"**，请随时向我提问，或点击下方快捷提问按钮！`,
             },
           ]);
         }
@@ -48,32 +73,31 @@ export default function AIChat({ questionId, questionText, onClose }: AIChatProp
         console.error("Failed to load chat history", err);
       }
     };
-    loadHistory();
-  }, [questionId, questionText]);
+    loadQuestionAndHistory();
+  }, [resolvedQId, propQuestion, propQText]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const handleSendPrompt = React.useCallback(async (text: string) => {
+    if (!text.trim() || isLoading) return;
 
-    const userMessageContent = input.trim();
+    const userMessageContent = text.trim();
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: createMessageId(),
       role: "user",
       content: userMessageContent,
     };
 
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
 
     // Save user message to IndexedDB
     try {
       await saveChatMessage({
-        questionId,
+        questionId: resolvedQId,
         role: "user",
         content: userMessageContent,
       });
@@ -87,7 +111,7 @@ export default function AIChat({ questionId, questionText, onClose }: AIChatProp
         setMessages((prev) => [
           ...prev,
           {
-            id: Date.now().toString(),
+            id: createMessageId(),
             role: "assistant",
             content: "⚠️ 请先在【设置】页面配置大模型 API Key 和 Base URL 后再使用 AI 答疑功能。",
           },
@@ -96,12 +120,29 @@ export default function AIChat({ questionId, questionText, onClose }: AIChatProp
         return;
       }
 
+      // Build rich context about the question
+      const q = activeQuestion;
+      const optionsText = q?.options 
+        ? Object.entries(q.options).map(([k, v]) => `  ${k}. ${v}`).join("\n") 
+        : "(无选项)";
+
+      const questionContext = `【当前题目信息】
+- 题干：${q?.question || propQText || "无"}
+- 选项：
+${optionsText}
+- 正确答案：${q?.answer || "未提供"}
+- 官方解析：${q?.explanation || "无"}
+`;
+
       const customQaPrompt = typeof window !== "undefined" ? localStorage.getItem("qaPrompt") : null;
-      const systemPrompt = customQaPrompt || "你是一个专业的辅导老师，请针对题目耐心解答学生的问题，分步骤剖析考点。";
+      const baseSystemPrompt = customQaPrompt || "你是一个专业的软考与计算机辅导名师，请基于题目背景耐心解答学生的问题，分步骤剖析考点。如果学生询问答案、原因或解析，请直接给出详尽深入的解答和考点分析。";
+      
+      const fullSystemPrompt = `${baseSystemPrompt}\n\n${questionContext}`;
 
       const apiMessages = [
-        { role: "system", content: systemPrompt },
-        ...newMessages.filter((m) => m.id !== "init").map((m) => ({ role: m.role, content: m.content })),
+        { role: "system", content: fullSystemPrompt },
+        ...messages.filter((m) => m.id !== "init").map((m) => ({ role: m.role, content: m.content })),
+        { role: "user", content: userMessageContent },
       ];
 
       const response = await fetch("/api/chat", {
@@ -122,8 +163,8 @@ export default function AIChat({ questionId, questionText, onClose }: AIChatProp
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let assistantContent = "";
-      const assistantMessageId = (Date.now() + 1).toString();
+      const assistantMessageId = createMessageId();
+      let assistantText = "";
       let buffer = "";
 
       while (true) {
@@ -142,29 +183,30 @@ export default function AIChat({ questionId, questionText, onClose }: AIChatProp
             try {
               const parsed = JSON.parse(data);
               const delta = parsed.choices?.[0]?.delta?.content || "";
-              assistantContent += delta;
+              assistantText += delta;
             } catch {
               // buffer chunk was partial
             }
           }
         }
 
+        const currentText = assistantText;
         setMessages((prev) => {
           const last = prev[prev.length - 1];
           if (last && last.id === assistantMessageId) {
-            return [...prev.slice(0, -1), { ...last, content: assistantContent }];
+            return [...prev.slice(0, -1), { ...last, content: currentText }];
           } else {
-            return [...prev, { id: assistantMessageId, role: "assistant", content: assistantContent }];
+            return [...prev, { id: assistantMessageId, role: "assistant", content: currentText }];
           }
         });
       }
 
       // Save assistant response to IndexedDB
-      if (assistantContent) {
+      if (assistantText) {
         await saveChatMessage({
-          questionId,
+          questionId: resolvedQId,
           role: "assistant",
-          content: assistantContent,
+          content: assistantText,
         });
       }
     } catch (error: unknown) {
@@ -173,7 +215,7 @@ export default function AIChat({ questionId, questionText, onClose }: AIChatProp
       setMessages((prev) => [
         ...prev,
         {
-          id: Date.now().toString(),
+          id: createMessageId(),
           role: "assistant",
           content: `❌ 请求出错: ${msg}`,
         },
@@ -181,7 +223,7 @@ export default function AIChat({ questionId, questionText, onClose }: AIChatProp
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [activeQuestion, isLoading, messages, propQText, resolvedQId]);
 
   return (
     <div className={styles.overlay}>
@@ -215,11 +257,25 @@ export default function AIChat({ questionId, questionText, onClose }: AIChatProp
           {isLoading && (
             <div className={`${styles.messageWrapper} ${styles.wrapperAssistant}`}>
               <div className={`${styles.bubble} ${styles.bubbleAssistant}`}>
-                <span className={styles.loadingDots}>AI 思考中...</span>
+                <span className={styles.loadingDots}>AI 正在组织思路解答中...</span>
               </div>
             </div>
           )}
           <div ref={messagesEndRef} />
+        </div>
+
+        <div className={styles.quickPrompts}>
+          {QUICK_PROMPTS.map((promptText) => (
+            <button
+              key={promptText}
+              type="button"
+              className={styles.chip}
+              disabled={isLoading}
+              onClick={() => handleSendPrompt(promptText)}
+            >
+              {promptText}
+            </button>
+          ))}
         </div>
 
         <div className={styles.inputArea}>
@@ -230,16 +286,16 @@ export default function AIChat({ questionId, questionText, onClose }: AIChatProp
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                handleSend();
+                handleSendPrompt(input);
               }
             }}
-            placeholder="输入你的问题... (Enter 发送, Shift+Enter 换行)"
+            placeholder="输入你的问题... (Enter 发送)"
             rows={2}
           />
           <button
             type="button"
             className={styles.sendBtn}
-            onClick={handleSend}
+            onClick={() => handleSendPrompt(input)}
             disabled={isLoading || !input.trim()}
           >
             发送

@@ -151,8 +151,7 @@ export default function MistakesPage() {
 
       {chatQuestion && (
         <AIChat
-          questionId={chatQuestion.id!}
-          questionText={chatQuestion.question}
+          question={chatQuestion}
           onClose={() => setChatQuestion(null)}
         />
       )}
