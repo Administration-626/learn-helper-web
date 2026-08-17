@@ -77,11 +77,6 @@ export default function QuizPage() {
     setIsLoading(false);
   };
 
-  const handleEnd = () => {
-    finishQuiz();
-    router.push("/quiz/result");
-  };
-
   if (isLoading) {
     return <div className={styles.container}><div className={styles.loading}>加载中...</div></div>;
   }
@@ -190,7 +185,7 @@ export default function QuizPage() {
   const isSubmitted = !!existingAnswer;
   const displayAnswer = isSubmitted ? existingAnswer : localAnswer;
 
-  const handleSelectOption = (optId: string) => {
+  const handleSelectOption = async (optId: string) => {
     if (isSubmitted || currentSession.mode === "recite") return;
     
     if (currentQuestion.type === "multi") {
@@ -203,14 +198,25 @@ export default function QuizPage() {
       currentArr.sort();
       setLocalAnswer(currentArr.join(""));
     } else {
-      setLocalAnswer(optId);
+      // Single choice: immediately submit answer!
+      setLocalAnswer("");
+      await answerQuestion(currentQuestion.id!, optId);
     }
   };
 
   const handleSubmit = async () => {
-    if (!localAnswer) return;
+    if (!localAnswer || !currentQuestion) return;
     await answerQuestion(currentQuestion.id!, localAnswer);
     setLocalAnswer("");
+  };
+
+  const handleEnd = async () => {
+    if (localAnswer && currentQuestion && !isSubmitted) {
+      await answerQuestion(currentQuestion.id!, localAnswer);
+      setLocalAnswer("");
+    }
+    finishQuiz();
+    router.push("/quiz/result");
   };
 
   const isSplit = showAIChat && aiLayout === "split";
