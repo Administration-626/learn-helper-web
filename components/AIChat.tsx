@@ -371,7 +371,7 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
 `;
 
       const customQaPrompt = typeof window !== "undefined" ? localStorage.getItem("qaPrompt") : null;
-      const baseSystemPrompt = customQaPrompt || "你是一个专业的软考与计算机辅导名师，请基于题目背景耐心解答学生的问题，分步骤剖析考点。如果学生询问答案、原因或解析，请直接给出详尽深入的解答和考点分析。如果学生答错了，请重点剖析其错因。";
+      const baseSystemPrompt = customQaPrompt || "你是一个专业的软考与计算机辅导名师，请基于题目背景耐心解答学生的问题，分步骤剖析考点。如果学生询问答案、原因或解析，请直接给出详尽深入的解答和考点分析。如果学生答错了，请重点剖析其错因。\n\n【排版规范】：涉及带引号或书名号的名词加粗时，请将标点置于加粗符号外（如“**左右法**”或《**教程**》），避免标点紧贴星号导致 Markdown 解析失败。";
       
       const fullSystemPrompt = `${baseSystemPrompt}\n\n${questionContext}`;
 
