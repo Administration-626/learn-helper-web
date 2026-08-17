@@ -136,3 +136,7 @@ export async function getChatMessages(questionId: number) {
     .equals(questionId)
     .sortBy('createdAt');
 }
+
+export async function clearChatMessages(questionId: number) {
+  return await db.chatMessages.where('questionId').equals(questionId).delete();
+}

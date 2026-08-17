@@ -152,6 +152,7 @@ export default function MistakesPage() {
       {chatQuestion && (
         <AIChat
           question={chatQuestion}
+          userAnswer={mistakes.find(m => m.questionId === chatQuestion.id)?.userAnswer}
           onClose={() => setChatQuestion(null)}
         />
       )}

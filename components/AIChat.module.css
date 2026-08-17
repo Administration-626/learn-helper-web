@@ -35,10 +35,39 @@
   background: var(--color-bg);
 }
 
+.headerTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .title {
   font-size: 1.1rem;
   font-weight: 600;
   color: var(--color-primary);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.headerBtn {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.headerBtn:hover {
+  background: var(--color-surface);
+  color: var(--color-error);
+  border-color: var(--color-error);
 }
 
 .closeBtn {
@@ -47,6 +76,9 @@
   font-size: 1.25rem;
   color: var(--color-text-secondary);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .closeBtn:hover {
@@ -168,6 +200,38 @@
 .sendBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.bubbleFooter {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.08);
+}
+
+.copyBtn {
+  background: transparent;
+  border: none;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.copyBtn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--color-primary);
+}
+
+.stopBtn {
+  background: var(--color-error, #ef4444) !important;
+}
+
+.stopBtn:hover {
+  background: #dc2626 !important;
 }
 
 .loadingDots {

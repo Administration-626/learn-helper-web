@@ -229,6 +229,7 @@ export default function QuizPage() {
       {showAIChat && (
         <AIChat 
           question={currentQuestion}
+          userAnswer={displayAnswer}
           onClose={() => setShowAIChat(false)}
         />
       )}
