@@ -7,6 +7,8 @@ import { Question } from "@/lib/types";
 import { useQuizStore } from "@/stores/quiz";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { formatCjkMarkdown } from "@/lib/markdown";
+import ExplanationModal from "./ExplanationModal";
 
 interface Message {
   id: string;
@@ -33,12 +35,6 @@ const QUICK_PROMPTS = [
   "🎯 解题技巧与速记口诀"
 ];
 
-function formatCjkMarkdown(text: string): string {
-  if (!text) return "";
-  // Fix CommonMark CJK punctuation-flanked emphasis bug (e.g. **范式（Normal Forms）**概念)
-  return text.replace(/([)）\]】"”’'])\*\*([\u4e00-\u9fa5a-zA-Z0-9])/g, "$1** $2");
-}
-
 let idCounter = 0;
 function createMessageId(): string {
   idCounter += 1;
@@ -60,13 +56,14 @@ export default function AIChat({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [savedExplanationId, setSavedExplanationId] = useState<string | null>(null);
   const [hoveredSavedId, setHoveredSavedId] = useState<string | null>(null);
+  const [editModalText, setEditModalText] = useState<string | null>(null);
   const [activeQuestion, setActiveQuestion] = useState<Question | null>(propQuestion || null);
   const [showScrollBottomBtn, setShowScrollBottomBtn] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isAtBottomRef = useRef(true);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const originalExplanationRef = useRef<string | null>(null);
+  const [originalExplanation, setOriginalExplanation] = useState<string | null>(null);
   const isTogglingExplanationRef = useRef(false);
 
   const resolvedQId = propQuestion?.id || propQId || 0;
@@ -82,8 +79,8 @@ export default function AIChat({
         }
       }
 
-      if (currentQ && originalExplanationRef.current === null) {
-        originalExplanationRef.current = currentQ.explanation || "";
+      if (currentQ) {
+        setOriginalExplanation(prev => (prev === null ? (currentQ.explanation || "") : prev));
       }
 
       try {
@@ -185,15 +182,15 @@ export default function AIChat({
     try {
       if (savedExplanationId === msgId) {
         // Rollback / Cancel: revert back to original question explanation
-        const fallback = originalExplanationRef.current || "";
+        const fallback = originalExplanation || "";
         await updateQuestionExplanation(resolvedQId, fallback);
         setActiveQuestion(prev => prev ? { ...prev, explanation: fallback } : null);
         useQuizStore.getState().updateQuestionExplanation(resolvedQId, fallback);
         setSavedExplanationId(null);
       } else {
         // Apply: save this AI content as question explanation
-        if (originalExplanationRef.current === null && activeQuestion) {
-          originalExplanationRef.current = activeQuestion.explanation || "";
+        if (originalExplanation === null && activeQuestion) {
+          setOriginalExplanation(activeQuestion.explanation || "");
         }
         await updateQuestionExplanation(resolvedQId, content);
         setActiveQuestion(prev => prev ? { ...prev, explanation: content } : null);
@@ -207,6 +204,20 @@ export default function AIChat({
       setTimeout(() => {
         isTogglingExplanationRef.current = false;
       }, 500);
+    }
+  };
+
+  const handleAppendExplanation = async (content: string) => {
+    if (!resolvedQId) return;
+    const currentExp = activeQuestion?.explanation?.trim() || "";
+    const merged = currentExp ? `${currentExp}\n\n---\n\n${content}` : content;
+    try {
+      await updateQuestionExplanation(resolvedQId, merged);
+      setActiveQuestion(prev => prev ? { ...prev, explanation: merged } : null);
+      useQuizStore.getState().updateQuestionExplanation(resolvedQId, merged);
+      alert("✓ 已成功将此条 AI 解答追加到题目解析中！");
+    } catch (err) {
+      console.error("Failed to append explanation:", err);
     }
   };
 
@@ -479,26 +490,44 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
                       {copiedId === msg.id ? "✓ 已复制" : "📋 复制"}
                     </button>
                     {resolvedQId > 0 && (
-                      <button
-                        type="button"
-                        className={`${styles.copyBtn} ${
-                          savedExplanationId === msg.id ? styles.savedBtnActive : ""
-                        }`}
-                        onClick={() => handleToggleExplanation(msg.content, msg.id)}
-                        onMouseEnter={() => setHoveredSavedId(msg.id)}
-                        onMouseLeave={() => setHoveredSavedId(null)}
-                        title={
-                          savedExplanationId === msg.id
-                            ? "点击取消并恢复题目的原始解析"
-                            : "将此条 AI 解答持久化保存为该题的官方解析"
-                        }
-                      >
-                        {savedExplanationId === msg.id
-                          ? hoveredSavedId === msg.id
-                            ? "✕ 取消设为解析"
-                            : "✓ 已设为本题解析"
-                          : "📌 设为本题解析"}
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          className={`${styles.copyBtn} ${
+                            savedExplanationId === msg.id ? styles.savedBtnActive : ""
+                          }`}
+                          onClick={() => handleToggleExplanation(msg.content, msg.id)}
+                          onMouseEnter={() => setHoveredSavedId(msg.id)}
+                          onMouseLeave={() => setHoveredSavedId(null)}
+                          title={
+                            savedExplanationId === msg.id
+                              ? "点击取消并恢复题目的原始解析"
+                              : "将此条 AI 解答持久化保存为该题的官方解析"
+                          }
+                        >
+                          {savedExplanationId === msg.id
+                            ? hoveredSavedId === msg.id
+                              ? "✕ 取消设为解析"
+                              : "✓ 已设为本题解析"
+                            : "📌 设为解析"}
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.copyBtn}
+                          onClick={() => handleAppendExplanation(msg.content)}
+                          title="将此条 AI 解答追加合并到现有题目解析的末尾"
+                        >
+                          ➕ 追加解析
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.copyBtn}
+                          onClick={() => setEditModalText(msg.content)}
+                          title="打开解析编辑器，自由组合与精修多轮 AI 解答"
+                        >
+                          ✏️ 编辑组合
+                        </button>
+                      </>
                     )}
                     <button
                       type="button"
@@ -583,19 +612,37 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
     </div>
   );
 
-  if (layout === "drawer") {
-    return (
-      <div 
-        className={styles.overlay}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) onClose();
-        }}
-      >
-        {contentPanel}
-      </div>
-    );
-  }
+  const finalElement = layout === "drawer" ? (
+    <div 
+      className={styles.overlay}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      {contentPanel}
+    </div>
+  ) : contentPanel;
 
-  return contentPanel;
+  return (
+    <>
+      {finalElement}
+      {editModalText && activeQuestion && (
+        <ExplanationModal
+          isOpen={!!editModalText}
+          question={activeQuestion}
+          originalDefaultExplanation={originalExplanation || undefined}
+          initialAppendText={editModalText}
+          onSave={async (newExp) => {
+            if (resolvedQId) {
+              await updateQuestionExplanation(resolvedQId, newExp);
+              setActiveQuestion(prev => prev ? { ...prev, explanation: newExp } : null);
+              useQuizStore.getState().updateQuestionExplanation(resolvedQId, newExp);
+            }
+          }}
+          onClose={() => setEditModalText(null)}
+        />
+      )}
+    </>
+  );
 }
 

@@ -5,7 +5,9 @@ import { db, getMistakes, removeMistake } from "@/lib/db";
 import { Question, MistakeRecord, QuestionBank } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import AIChat from "@/components/AIChat";
-
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { formatCjkMarkdown } from "@/lib/markdown";
 import { useQuizStore } from "@/stores/quiz";
 
 type MistakeItem = MistakeRecord & { questionData?: Question, bankName?: string };
@@ -128,7 +130,10 @@ export default function MistakesPage() {
                       </div>
                       {q.explanation && (
                         <div className={styles.explanation}>
-                          <strong>解析：</strong> {q.explanation}
+                          <div style={{ fontWeight: "bold", marginBottom: "4px" }}>【解析】：</div>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {formatCjkMarkdown(q.explanation)}
+                          </ReactMarkdown>
                         </div>
                       )}
                     </>

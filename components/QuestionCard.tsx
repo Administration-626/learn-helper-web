@@ -1,8 +1,14 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import styles from "./QuestionCard.module.css";
 import { Question, QuizMode } from "@/lib/types";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { formatCjkMarkdown } from "@/lib/markdown";
+import ExplanationModal from "./ExplanationModal";
+import { updateQuestionExplanation } from "@/lib/db";
+import { useQuizStore } from "@/stores/quiz";
 
 interface QuestionCardProps {
   question: Question;
@@ -29,6 +35,8 @@ export default function QuestionCard({
   onNext,
   onPrev,
 }: QuestionCardProps) {
+  const [showEditModal, setShowEditModal] = useState(false);
+
   const isMultiChoice = question.type === "multi";
   const isRecite = mode === "recite";
   const isExam = mode === "exam";
@@ -99,13 +107,25 @@ export default function QuestionCard({
 
       {((isSubmitted && !isExam) || isRecite) && (
         <div className={styles.feedback}>
-          <h4 className={styles.feedbackTitle}>
-            正确答案: <span style={{ color: "var(--color-success)" }}>{question.answer}</span>
-          </h4>
+          <div className={styles.feedbackHeader}>
+            <h4 className={styles.feedbackTitle}>
+              正确答案: <span style={{ color: "var(--color-success)" }}>{question.answer}</span>
+            </h4>
+            <button
+              type="button"
+              className={styles.editExplanationBtn}
+              onClick={() => setShowEditModal(true)}
+              title="编辑自定义本题解析"
+            >
+              ✏️ 编辑解析
+            </button>
+          </div>
           {question.explanation && (
-            <p className={styles.explanation}>
-              <strong>解析：</strong>{question.explanation}
-            </p>
+            <div className={styles.explanationBody}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {formatCjkMarkdown(question.explanation)}
+              </ReactMarkdown>
+            </div>
           )}
         </div>
       )}
@@ -133,13 +153,27 @@ export default function QuestionCard({
 
         <button 
           type="button"
-          className={`${styles.btn} ${styles.btnSecondary}`}
+          className={`${styles.btn} ${styles.btnSecondary}`} 
           onClick={onNext}
           disabled={questionIndex === totalQuestions - 1}
         >
           下一题
         </button>
       </div>
+
+      {showEditModal && (
+        <ExplanationModal
+          isOpen={showEditModal}
+          question={question}
+          onSave={async (newExp) => {
+            if (question.id) {
+              await updateQuestionExplanation(question.id, newExp);
+              useQuizStore.getState().updateQuestionExplanation(question.id, newExp);
+            }
+          }}
+          onClose={() => setShowEditModal(false)}
+        />
+      )}
     </div>
   );
 }

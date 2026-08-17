@@ -8,11 +8,7 @@ import { calculateStats } from "@/lib/quiz-engine";
 import { getActiveLLMConfig } from "@/lib/db";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-
-function formatCjkMarkdown(text: string): string {
-  if (!text) return "";
-  return text.replace(/([)）\]】"”’'])\*\*([\u4e00-\u9fa5a-zA-Z0-9])/g, "$1** $2");
-}
+import { formatCjkMarkdown } from "@/lib/markdown";
 
 export default function QuizResultPage() {
   const router = useRouter();

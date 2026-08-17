@@ -103,7 +103,30 @@
   background: #f8fafc;
   border-radius: var(--radius-sm);
   font-size: 0.9rem;
-  color: var(--color-text-secondary);
+  color: var(--color-text);
+  line-height: 1.7;
+}
+.explanation table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  font-size: 0.85rem;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+.explanation th, .explanation td {
+  border: 1px solid var(--color-border);
+  padding: 6px 10px;
+  text-align: left;
+}
+.explanation th {
+  background: #ffffff;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+.explanation tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.02);
 }
 .cardActions {
   display: flex;
