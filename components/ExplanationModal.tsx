@@ -8,6 +8,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { formatCjkMarkdown } from "@/lib/markdown";
+import { RefreshIcon, TrashIcon, CloseIcon } from "./Icons";
 
 interface ExplanationModalProps {
   isOpen: boolean;
@@ -80,7 +81,7 @@ export default function ExplanationModal({
             </span>
           </div>
           <button type="button" className={styles.closeBtn} onClick={onClose} title="关闭">
-            ✕
+            <CloseIcon size={16} />
           </button>
         </div>
 
@@ -117,7 +118,8 @@ export default function ExplanationModal({
                 onClick={handleRestoreDefault}
                 title="恢复题目原始内置解析"
               >
-                🔄 还原题库解析
+                <RefreshIcon size={13} />
+                <span>还原题库解析</span>
               </button>
             )}
             <button
@@ -126,7 +128,8 @@ export default function ExplanationModal({
               onClick={handleClear}
               title="清空当前编辑框"
             >
-              🧹 清空
+              <TrashIcon size={13} />
+              <span>清空</span>
             </button>
           </div>
         </div>

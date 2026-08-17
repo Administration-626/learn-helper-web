@@ -9,6 +9,7 @@ import { generateQuestionOrder } from "@/lib/quiz-engine";
 import type { QuestionBank, QuizMode } from "@/lib/types";
 import QuestionCard from "@/components/QuestionCard";
 import AIChat, { type AIChatLayout } from "@/components/AIChat";
+import { SparklesIcon } from "@/components/Icons";
 
 export default function QuizPage() {
   const router = useRouter();
@@ -253,7 +254,8 @@ export default function QuizPage() {
             className={`${styles.aiBtn} ${showAIChat ? styles.aiBtnActive : ""}`} 
             onClick={() => setShowAIChat(!showAIChat)}
           >
-            {showAIChat ? "收起 AI" : "🤖 问 AI"}
+            <SparklesIcon size={14} />
+            <span>{showAIChat ? "收起 AI" : "AI 答疑"}</span>
           </button>
           <button type="button" className={styles.endBtn} onClick={handleEnd}>
             {currentSession.mode === "exam" ? "交卷" : "结束"}

@@ -9,6 +9,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { formatCjkMarkdown } from "@/lib/markdown";
 import ExplanationModal from "./ExplanationModal";
+import { EditIcon } from "./Icons";
 import { updateQuestionExplanation } from "@/lib/db";
 import { useQuizStore } from "@/stores/quiz";
 
@@ -137,7 +138,8 @@ export default function QuestionCard({
               onClick={() => setShowEditModal(true)}
               title="编辑自定义本题解析"
             >
-              ✏️ 编辑解析
+              <EditIcon size={13} />
+              <span>编辑解析</span>
             </button>
           </div>
           {question.explanation && (

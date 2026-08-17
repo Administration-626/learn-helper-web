@@ -139,6 +139,9 @@
   color: var(--color-text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .editExplanationBtn:hover {

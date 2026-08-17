@@ -11,6 +11,21 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { formatCjkMarkdown } from "@/lib/markdown";
 import ExplanationModal from "./ExplanationModal";
+import {
+  SparklesIcon,
+  CopyIcon,
+  CheckIcon,
+  CloseIcon,
+  PinIcon,
+  RefreshIcon,
+  PlusIcon,
+  EditIcon,
+  DownloadIcon,
+  TrashIcon,
+  StopIcon,
+  BrainIcon,
+  SendIcon,
+} from "./Icons";
 
 interface Message {
   id: string;
@@ -32,10 +47,10 @@ interface AIChatProps {
 }
 
 const QUICK_PROMPTS = [
-  "💡 为什么选这个答案？",
-  "🔍 逐个选项分析对错",
-  "📖 本题核心考点剖析",
-  "🎯 解题技巧与速记口诀"
+  "为什么选这个答案？",
+  "逐个选项分析对错",
+  "核心考点深度剖析",
+  "解题技巧与速记要点"
 ];
 
 let idCounter = 0;
@@ -121,7 +136,7 @@ export default function AIChat({
             {
               id: "init",
               role: "assistant",
-              content: `你好！我是你的 AI 辅导老师 🤖\n\n针对当前题目：**"${qTitle}"**，请随时向我提问，或点击下方快捷提问按钮！`,
+              content: `你好！我是你的 AI 辅导助手 ✨\n\n针对当前题目：**"${qTitle}"**，请随时向我提问，或点击下方快捷提问按钮。`,
             },
           ]);
         }
@@ -274,7 +289,7 @@ ${optText ? `### 选项\n${optText}` : ""}${correctAns}${userAnsText}
 
 ---
 
-## 🤖 AI 深度解答与考点剖析
+## AI 深度解答与考点剖析
 ${content}
 
 ---
@@ -480,249 +495,279 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
     <div className={`${styles.panel} ${layout === "split" ? styles.panelInline : layout === "bottom" ? styles.panelBottom : ""}`}>
       <div className={styles.header}>
         <div className={styles.headerTitleGroup}>
+          <SparklesIcon size={18} className={styles.aiSparkleIcon} />
           <h3 className={styles.title}>AI 答疑辅导</h3>
           {onLayoutChange && (
             <div className={styles.layoutToggleGroup}>
-              <button
-                type="button"
-                className={`${styles.layoutBtn} ${layout === "split" ? styles.layoutBtnActive : ""}`}
-                onClick={() => onLayoutChange("split")}
-                title="左右分屏并排"
-              >
-                🗖 分屏
-              </button>
-              <button
-                type="button"
-                className={`${styles.layoutBtn} ${layout === "bottom" ? styles.layoutBtnActive : ""}`}
-                onClick={() => onLayoutChange("bottom")}
-                title="底部嵌入模式"
-              >
-                🗕 底部
-              </button>
-              <button
-                type="button"
-                className={`${styles.layoutBtn} ${layout === "drawer" ? styles.layoutBtnActive : ""}`}
-                onClick={() => onLayoutChange("drawer")}
-                title="右侧悬浮抽屉"
-              >
-                🗗 抽屉
-              </button>
-            </div>
-          )}
-        </div>
-        <div className={styles.headerActions}>
-          <button 
-            type="button" 
-            className={styles.headerBtn} 
-            onClick={handleClearHistory}
-            title="清空当前题目的对话记录"
-          >
-            🗑️ 清空
-          </button>
-          <button type="button" className={styles.closeBtn} onClick={onClose} title="关闭 (Esc)">
-            ✕
-          </button>
-        </div>
-      </div>
-
-      <div className={styles.messageListContainer}>
-        <div className={styles.messageList} onScroll={handleMessageScroll}>
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`${styles.messageWrapper} ${
-                msg.role === "user" ? styles.wrapperUser : styles.wrapperAssistant
-              }`}
+                <button
+                  type="button"
+                  className={`${styles.layoutBtn} ${layout === "split" ? styles.layoutBtnActive : ""}`}
+                  onClick={() => onLayoutChange("split")}
+                  title="左右分屏并排"
+                >
+                  分屏
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.layoutBtn} ${layout === "bottom" ? styles.layoutBtnActive : ""}`}
+                  onClick={() => onLayoutChange("bottom")}
+                  title="底部嵌入模式"
+                >
+                  底部
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.layoutBtn} ${layout === "drawer" ? styles.layoutBtnActive : ""}`}
+                  onClick={() => onLayoutChange("drawer")}
+                  title="右侧悬浮抽屉"
+                >
+                  抽屉
+                </button>
+              </div>
+            )}
+          </div>
+          <div className={styles.headerActions}>
+            <button 
+              type="button" 
+              className={styles.headerBtn} 
+              onClick={handleClearHistory}
+              title="清空当前题目的对话记录"
             >
+              <TrashIcon size={13} />
+              <span>清空</span>
+            </button>
+            <button type="button" className={styles.closeBtn} onClick={onClose} title="关闭 (Esc)">
+              <CloseIcon size={14} />
+            </button>
+          </div>
+        </div>
+
+        <div className={styles.messageListContainer}>
+          <div className={styles.messageList} onScroll={handleMessageScroll}>
+            {messages.map((msg) => (
               <div
-                className={`${styles.bubble} ${
-                  msg.role === "user" ? styles.bubbleUser : styles.bubbleAssistant
+                key={msg.id}
+                className={`${styles.messageWrapper} ${
+                  msg.role === "user" ? styles.wrapperUser : styles.wrapperAssistant
                 }`}
               >
-                {msg.reasoning && (
-                  <details open={isLoading} className={styles.reasoningBox}>
-                    <summary className={styles.reasoningSummary}>
-                      💭 深度思考过程 ({msg.reasoning.length} 字)
-                    </summary>
-                    <div className={styles.reasoningContent}>{msg.reasoning}</div>
-                  </details>
-                )}
-                {msg.content && (
-                  <div className={styles.markdownBody} style={{ wordBreak: "break-word" }}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
-                      {formatCjkMarkdown(msg.content)}
-                    </ReactMarkdown>
-                  </div>
-                )}
-                {msg.role === "assistant" && msg.id !== "init" && msg.content && (() => {
-                  const currentExpTrim = (activeQuestion?.explanation || "").trim();
-                  const msgTrim = msg.content.trim();
-                  const isAdopted = savedExplanationId === msg.id || (currentExpTrim.length > 0 && currentExpTrim === msgTrim);
-                  const hasOtherAdopted = !isAdopted && (
-                    (savedExplanationId !== null && savedExplanationId !== msg.id) ||
-                    (currentExpTrim.length > 0 && currentExpTrim !== (originalExplanation || "").trim())
-                  );
+                <div
+                  className={`${styles.bubble} ${
+                    msg.role === "user" ? styles.bubbleUser : styles.bubbleAssistant
+                  }`}
+                >
+                  {msg.reasoning && (
+                    <details open={isLoading} className={styles.reasoningBox}>
+                      <summary className={styles.reasoningSummary}>
+                        <BrainIcon size={14} />
+                        <span>深度思考过程 ({msg.reasoning.length} 字)</span>
+                      </summary>
+                      <div className={styles.reasoningContent}>{msg.reasoning}</div>
+                    </details>
+                  )}
+                  {msg.content && (
+                    <div className={styles.markdownBody} style={{ wordBreak: "break-word" }}>
+                      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+                        {formatCjkMarkdown(msg.content)}
+                      </ReactMarkdown>
+                    </div>
+                  )}
+                  {msg.role === "assistant" && msg.id !== "init" && msg.content && (() => {
+                    const currentExpTrim = (activeQuestion?.explanation || "").trim();
+                    const msgTrim = msg.content.trim();
+                    const isAdopted = savedExplanationId === msg.id || (currentExpTrim.length > 0 && currentExpTrim === msgTrim);
+                    const hasOtherAdopted = !isAdopted && (
+                      (savedExplanationId !== null && savedExplanationId !== msg.id) ||
+                      (currentExpTrim.length > 0 && currentExpTrim !== (originalExplanation || "").trim())
+                    );
 
-                  return (
-                    <div className={styles.bubbleFooter}>
-                      <button
-                        type="button"
-                        className={styles.copyBtn}
-                        onClick={() => handleCopy(msg.content, msg.id)}
-                        title="复制回答到剪贴板"
-                      >
-                        {copiedId === msg.id ? "✓ 已复制" : "📋 复制"}
-                      </button>
-
-                      {resolvedQId > 0 && (
-                        <>
-                          {isAdopted ? (
-                            /* State B: Already adopted this message */
-                            <button
-                              type="button"
-                              className={`${styles.copyBtn} ${styles.savedBtnActive}`}
-                              onClick={handleCancelAdopt}
-                              onMouseEnter={() => setHoveredSavedId(msg.id)}
-                              onMouseLeave={() => setHoveredSavedId(null)}
-                              title="点击取消采纳，恢复题目原始解析"
-                            >
-                              {hoveredSavedId === msg.id ? "✕ 取消采纳" : "✓ 已采纳为题解"}
-                            </button>
-                          ) : hasOtherAdopted ? (
-                            /* State C: Another answer is adopted, provide Overwrite or Append or Edit */
+                    return (
+                      <div className={styles.bubbleFooter}>
+                        <button
+                          type="button"
+                          className={styles.copyBtn}
+                          onClick={() => handleCopy(msg.content, msg.id)}
+                          title="复制回答到剪贴板"
+                        >
+                          {copiedId === msg.id ? (
                             <>
+                              <CheckIcon size={13} />
+                              <span>已复制</span>
+                            </>
+                          ) : (
+                            <>
+                              <CopyIcon size={13} />
+                              <span>复制</span>
+                            </>
+                          )}
+                        </button>
+
+                        {resolvedQId > 0 && (
+                          <>
+                            {isAdopted ? (
+                              /* State B: Already adopted this message */
+                              <button
+                                type="button"
+                                className={`${styles.copyBtn} ${styles.savedBtnActive}`}
+                                onClick={handleCancelAdopt}
+                                onMouseEnter={() => setHoveredSavedId(msg.id)}
+                                onMouseLeave={() => setHoveredSavedId(null)}
+                                title="点击取消采纳，恢复题目原始解析"
+                              >
+                                {hoveredSavedId === msg.id ? (
+                                  <>
+                                    <CloseIcon size={13} />
+                                    <span>取消采纳</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckIcon size={13} />
+                                    <span>已采纳为题解</span>
+                                  </>
+                                )}
+                              </button>
+                            ) : hasOtherAdopted ? (
+                              /* State C: Another answer is adopted, provide Overwrite or Append or Edit */
+                              <>
+                                <button
+                                  type="button"
+                                  className={styles.copyBtn}
+                                  onClick={() => handleAdoptExplanation(msg.content, msg.id)}
+                                  title="将此回答覆盖为最新的本题题解"
+                                >
+                                  <RefreshIcon size={13} />
+                                  <span>覆盖题解</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className={styles.copyBtn}
+                                  onClick={() => handleAppendExplanation(msg.content, msg.id)}
+                                  title="将此回答追加合并到现有题解的末尾"
+                                >
+                                  <PlusIcon size={13} />
+                                  <span>追加合并</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className={styles.copyBtn}
+                                  onClick={() => setEditModalText(msg.content)}
+                                  title="打开编辑器自由精修组合"
+                                >
+                                  <EditIcon size={13} />
+                                  <span>精修组合</span>
+                                </button>
+                              </>
+                            ) : (
+                              /* State A: Initial state, adopt this message directly */
                               <button
                                 type="button"
                                 className={styles.copyBtn}
                                 onClick={() => handleAdoptExplanation(msg.content, msg.id)}
-                                title="将此回答覆盖为最新的本题题解"
+                                title="将此条 AI 解答采纳为该题的标准题解"
                               >
-                                🔄 覆盖题解
+                                <PinIcon size={13} />
+                                <span>采纳为题解</span>
                               </button>
-                              <button
-                                type="button"
-                                className={styles.copyBtn}
-                                onClick={() => handleAppendExplanation(msg.content, msg.id)}
-                                title="将此回答追加合并到现有题解的末尾"
-                              >
-                                ➕ 追加合并
-                              </button>
-                              <button
-                                type="button"
-                                className={styles.copyBtn}
-                                onClick={() => setEditModalText(msg.content)}
-                                title="打开编辑器自由精修组合"
-                              >
-                                ✏️ 精修组合
-                              </button>
-                            </>
-                          ) : (
-                            /* State A: Initial state, adopt this message directly */
-                            <button
-                              type="button"
-                              className={styles.copyBtn}
-                              onClick={() => handleAdoptExplanation(msg.content, msg.id)}
-                              title="将此条 AI 解答采纳为该题的标准题解"
-                            >
-                              📌 采纳为题解
-                            </button>
-                          )}
-                        </>
-                      )}
+                            )}
+                          </>
+                        )}
 
-                      <button
-                        type="button"
-                        className={styles.copyBtn}
-                        onClick={() => handleExportMarkdown(msg.content)}
-                        title="导出包含题干与此条解析的本地 Markdown 笔记文件"
-                      >
-                        💾 导出笔记
-                      </button>
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-          ))}
-          {isLoading && !messages[messages.length - 1]?.content && !messages[messages.length - 1]?.reasoning && (
-            <div className={`${styles.messageWrapper} ${styles.wrapperAssistant}`}>
-              <div className={`${styles.bubble} ${styles.bubbleAssistant}`}>
-                <div className={styles.loadingWrapper}>
-                  <div className={styles.loadingDots}>
-                    <span>⏳ AI 正在组织思路解答中...</span>
-                    <span style={{ fontWeight: 600, color: "var(--color-primary)" }}>
-                      ({elapsedSeconds}s)
-                    </span>
-                  </div>
-                  {elapsedSeconds >= 12 && (
-                    <div className={styles.loadingHint}>
-                      💡 大模型正在深度推理或网络排队中，若等待时间过长可点击下方【🛑 停止】或检查【设置】中的 API 服务
-                    </div>
-                  )}
+                        <button
+                          type="button"
+                          className={styles.copyBtn}
+                          onClick={() => handleExportMarkdown(msg.content)}
+                          title="导出包含题干与此条解析的本地 Markdown 笔记文件"
+                        >
+                          <DownloadIcon size={13} />
+                          <span>导出笔记</span>
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
-            </div>
+            ))}
+            {isLoading && !messages[messages.length - 1]?.content && !messages[messages.length - 1]?.reasoning && (
+              <div className={`${styles.messageWrapper} ${styles.wrapperAssistant}`}>
+                <div className={`${styles.bubble} ${styles.bubbleAssistant}`}>
+                  <div className={styles.loadingWrapper}>
+                    <div className={styles.loadingDots}>
+                      <span>AI 正在组织思路解答中...</span>
+                      <span style={{ fontWeight: 600, color: "var(--color-primary)" }}>
+                        ({elapsedSeconds}s)
+                      </span>
+                    </div>
+                    {elapsedSeconds >= 12 && (
+                      <div className={styles.loadingHint}>
+                        大模型正在深度推理或网络排队中，若等待时间过长可点击下方【停止】或检查【设置】中的 API 服务
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+          {showScrollBottomBtn && (
+            <button
+              type="button"
+              className={styles.scrollBottomBtn}
+              onClick={scrollToBottom}
+            >
+              ↓ 滚动至最新
+            </button>
           )}
-          <div ref={messagesEndRef} />
         </div>
-        {showScrollBottomBtn && (
-          <button
-            type="button"
-            className={styles.scrollBottomBtn}
-            onClick={scrollToBottom}
-          >
-            ↓ 滚动至最新
-          </button>
-        )}
-      </div>
 
-      <div className={styles.quickPrompts}>
-        {QUICK_PROMPTS.map((promptText) => (
-          <button
-            key={promptText}
-            type="button"
-            className={styles.chip}
-            disabled={isLoading}
-            onClick={() => handleSendPrompt(promptText)}
-          >
-            {promptText}
-          </button>
-        ))}
-      </div>
+        <div className={styles.quickPrompts}>
+          {QUICK_PROMPTS.map((promptText) => (
+            <button
+              key={promptText}
+              type="button"
+              className={styles.chip}
+              disabled={isLoading}
+              onClick={() => handleSendPrompt(promptText)}
+            >
+              {promptText}
+            </button>
+          ))}
+        </div>
 
-      <div className={styles.inputArea}>
-        <textarea
-          className={styles.input}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSendPrompt(input);
-            }
-          }}
-          placeholder="输入你的问题... (Enter 发送)"
-          rows={2}
-        />
-        {isLoading ? (
-          <button
-            type="button"
-            className={`${styles.sendBtn} ${styles.stopBtn}`}
-            onClick={handleStop}
-          >
-            🛑 停止
-          </button>
-        ) : (
-          <button
-            type="button"
-            className={styles.sendBtn}
-            onClick={() => handleSendPrompt(input)}
-            disabled={!input.trim()}
-          >
-            发送
-          </button>
-        )}
-      </div>
+        <div className={styles.inputArea}>
+          <textarea
+            className={styles.input}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSendPrompt(input);
+              }
+            }}
+            placeholder="输入你的问题... (Enter 发送)"
+            rows={2}
+          />
+          {isLoading ? (
+            <button
+              type="button"
+              className={`${styles.sendBtn} ${styles.stopBtn}`}
+              onClick={handleStop}
+            >
+              <StopIcon size={12} />
+              <span>停止</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className={styles.sendBtn}
+              onClick={() => handleSendPrompt(input)}
+              disabled={!input.trim()}
+            >
+              <SendIcon size={14} />
+              <span>发送</span>
+            </button>
+          )}
+        </div>
     </div>
   );
 

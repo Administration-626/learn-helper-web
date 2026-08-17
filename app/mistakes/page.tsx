@@ -11,6 +11,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { formatCjkMarkdown } from "@/lib/markdown";
 import { useQuizStore } from "@/stores/quiz";
+import { SparklesIcon, TrashIcon } from "@/components/Icons";
 
 type MistakeItem = MistakeRecord & { questionData?: Question, bankName?: string };
 
@@ -157,10 +158,12 @@ export default function MistakesPage() {
 
                 <div className={styles.cardActions}>
                   <button type="button" className={styles.actionBtn} onClick={() => setChatQuestion(q)}>
-                    🤖 问 AI
+                    <SparklesIcon size={14} />
+                    <span>AI 答疑</span>
                   </button>
                   <button type="button" className={`${styles.actionBtn} ${styles.actionBtnDelete}`} onClick={() => handleDelete(m.questionId)}>
-                    删除
+                    <TrashIcon size={13} />
+                    <span>删除</span>
                   </button>
                 </div>
               </div>
