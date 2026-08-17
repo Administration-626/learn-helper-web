@@ -130,20 +130,34 @@ export default function QuizPage() {
               <div 
                 className={`${styles.modeOption} ${selectedMode === "sequential" ? styles.active : ""}`}
                 onClick={() => setSelectedMode("sequential")}
+                title="即选即判，适合日常单题深入攻坚"
               >
-                顺序模式
+                <strong>顺序练习</strong>
+                <span style={{ fontSize: '0.75rem', display: 'block', opacity: 0.8, marginTop: '2px' }}>即选即判</span>
               </div>
               <div 
                 className={`${styles.modeOption} ${selectedMode === "random" ? styles.active : ""}`}
                 onClick={() => setSelectedMode("random")}
+                title="乱序打乱刷题，保持新鲜感"
               >
-                随机模式
+                <strong>随机练习</strong>
+                <span style={{ fontSize: '0.75rem', display: 'block', opacity: 0.8, marginTop: '2px' }}>随机乱序</span>
+              </div>
+              <div 
+                className={`${styles.modeOption} ${selectedMode === "exam" ? styles.active : ""}`}
+                onClick={() => setSelectedMode("exam")}
+                title="全卷作答时不揭晓答案，交卷后统一看成绩与全解析"
+              >
+                <strong>全真模考</strong>
+                <span style={{ fontSize: '0.75rem', display: 'block', opacity: 0.8, marginTop: '2px' }}>交卷后看解析</span>
               </div>
               <div 
                 className={`${styles.modeOption} ${selectedMode === "recite" ? styles.active : ""}`}
                 onClick={() => setSelectedMode("recite")}
+                title="直接展示答案与解析，适合快速通读"
               >
-                背诵模式
+                <strong>背诵模式</strong>
+                <span style={{ fontSize: '0.75rem', display: 'block', opacity: 0.8, marginTop: '2px' }}>直接看解析</span>
               </div>
             </div>
           </div>
@@ -166,7 +180,10 @@ export default function QuizPage() {
   const bankName = currentSession.bankId === -1 
     ? "错题复习专场" 
     : (banks.find(b => b.id === currentSession.bankId)?.name || "题库");
-  const modeLabel = currentSession.mode === 'sequential' ? '顺序' : currentSession.mode === 'random' ? '随机' : '背诵';
+  const modeLabel = 
+    currentSession.mode === 'sequential' ? '顺序练习' : 
+    currentSession.mode === 'random' ? '随机练习' : 
+    currentSession.mode === 'exam' ? '全真模考' : '背诵模式';
 
   if (!currentQuestion) {
     return (
@@ -238,7 +255,9 @@ export default function QuizPage() {
           >
             {showAIChat ? "收起 AI" : "🤖 问 AI"}
           </button>
-          <button type="button" className={styles.endBtn} onClick={handleEnd}>结束</button>
+          <button type="button" className={styles.endBtn} onClick={handleEnd}>
+            {currentSession.mode === "exam" ? "交卷" : "结束"}
+          </button>
         </div>
       </header>
 

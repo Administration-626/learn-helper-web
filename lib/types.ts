@@ -31,7 +31,7 @@ export interface MistakeRecord {
 // Quiz session
 export interface QuizSession {
   bankId: number;
-  mode: 'sequential' | 'random' | 'recite';
+  mode: QuizMode;
   currentIndex: number;
   answers: Record<number, string>; // questionId -> userAnswer
   seed?: number; // for random mode persistence
@@ -59,4 +59,4 @@ export interface ChatMessage {
   createdAt: number;
 }
 
-export type QuizMode = 'sequential' | 'random' | 'recite';
+export type QuizMode = 'sequential' | 'random' | 'recite' | 'exam';

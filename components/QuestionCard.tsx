@@ -31,6 +31,7 @@ export default function QuestionCard({
 }: QuestionCardProps) {
   const isMultiChoice = question.type === "multi";
   const isRecite = mode === "recite";
+  const isExam = mode === "exam";
 
   const getOptionClass = (key: string) => {
     const classes = [styles.option];
@@ -39,7 +40,7 @@ export default function QuestionCard({
       classes.push(styles.selected);
     }
 
-    if (isSubmitted || isRecite) {
+    if ((isSubmitted && !isExam) || isRecite) {
       const isCorrect = question.answer.includes(key);
       const isSelected = selectedAnswer?.includes(key);
 
@@ -55,7 +56,7 @@ export default function QuestionCard({
   };
 
   const handleOptionClick = (key: string) => {
-    if (isSubmitted || isRecite) return;
+    if ((!isExam && isSubmitted) || isRecite) return;
     onSelectOption(key);
   };
 
@@ -87,7 +88,7 @@ export default function QuestionCard({
               type="button"
               className={getOptionClass(key)}
               onClick={() => handleOptionClick(key)}
-              disabled={isSubmitted || isRecite}
+              disabled={(!isExam && isSubmitted) || isRecite}
             >
               <span className={styles.optionLabel}>{key}</span>
               <span className={styles.optionText}>{text}</span>
@@ -96,7 +97,7 @@ export default function QuestionCard({
         </div>
       </div>
 
-      {(isSubmitted || isRecite) && (
+      {((isSubmitted && !isExam) || isRecite) && (
         <div className={styles.feedback}>
           <h4 className={styles.feedbackTitle}>
             正确答案: <span style={{ color: "var(--color-success)" }}>{question.answer}</span>
