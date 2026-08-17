@@ -7,6 +7,8 @@ import { Question } from "@/lib/types";
 import { useQuizStore } from "@/stores/quiz";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { formatCjkMarkdown } from "@/lib/markdown";
 import ExplanationModal from "./ExplanationModal";
 
@@ -547,7 +549,9 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
                 )}
                 {msg.content && (
                   <div className={styles.markdownBody} style={{ wordBreak: "break-word" }}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{formatCjkMarkdown(msg.content)}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+                      {formatCjkMarkdown(msg.content)}
+                    </ReactMarkdown>
                   </div>
                 )}
                 {msg.role === "assistant" && msg.id !== "init" && msg.content && (() => {

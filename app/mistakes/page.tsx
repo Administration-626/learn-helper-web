@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import AIChat from "@/components/AIChat";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { formatCjkMarkdown } from "@/lib/markdown";
 import { useQuizStore } from "@/stores/quiz";
 
@@ -131,7 +133,7 @@ export default function MistakesPage() {
                       {q.explanation && (
                         <div className={styles.explanation}>
                           <div style={{ fontWeight: "bold", marginBottom: "4px" }}>【解析】：</div>
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
                             {formatCjkMarkdown(q.explanation)}
                           </ReactMarkdown>
                         </div>

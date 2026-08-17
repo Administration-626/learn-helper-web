@@ -5,6 +5,8 @@ import styles from "./ExplanationModal.module.css";
 import { Question } from "@/lib/types";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { formatCjkMarkdown } from "@/lib/markdown";
 
 interface ExplanationModalProps {
@@ -146,7 +148,7 @@ export default function ExplanationModal({
               <div className={styles.previewLabel}>实时排版预览</div>
               {content ? (
                 <div className={styles.markdownBody}>
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
                     {formatCjkMarkdown(content)}
                   </ReactMarkdown>
                 </div>

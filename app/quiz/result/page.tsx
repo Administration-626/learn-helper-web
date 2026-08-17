@@ -8,6 +8,8 @@ import { calculateStats } from "@/lib/quiz-engine";
 import { getActiveLLMConfig } from "@/lib/db";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { formatCjkMarkdown } from "@/lib/markdown";
 
 export default function QuizResultPage() {
@@ -167,7 +169,9 @@ ${stats.incorrectQuestions.map((q, idx) => `${idx + 1}. [${q.tag || "通用"}] $
         <div className={styles.aiAnalysis}>
           <h3>AI 学习分析与建议</h3>
           <div className={styles.aiContent} style={{ lineHeight: 1.7 }}>
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{formatCjkMarkdown(aiAnalysis)}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+              {formatCjkMarkdown(aiAnalysis)}
+            </ReactMarkdown>
           </div>
         </div>
       )}

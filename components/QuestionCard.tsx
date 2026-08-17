@@ -5,6 +5,8 @@ import styles from "./QuestionCard.module.css";
 import { Question, QuizMode } from "@/lib/types";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { formatCjkMarkdown } from "@/lib/markdown";
 import ExplanationModal from "./ExplanationModal";
 import { updateQuestionExplanation } from "@/lib/db";
@@ -122,7 +124,7 @@ export default function QuestionCard({
           </div>
           {question.explanation && (
             <div className={styles.explanationBody}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
                 {formatCjkMarkdown(question.explanation)}
               </ReactMarkdown>
             </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
+import "katex/dist/katex.min.css";
 import styles from "./layout.module.css";
 
 export const metadata: Metadata = {
