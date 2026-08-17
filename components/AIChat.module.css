@@ -11,8 +11,8 @@
 }
 
 .panel {
-  width: 100%;
-  max-width: 400px;
+  width: 90vw;
+  max-width: 580px;
   background: var(--color-surface);
   height: 100%;
   display: flex;
@@ -22,6 +22,7 @@
 }
 
 .panelInline {
+  width: 100%;
   max-width: none;
   height: 100%;
   min-height: 520px;
@@ -33,6 +34,7 @@
 }
 
 .panelBottom {
+  width: 100%;
   max-width: none;
   height: 540px;
   border: 1px solid var(--color-border);
@@ -159,24 +161,77 @@
 }
 
 .bubble {
-  max-width: 85%;
-  padding: var(--space-sm) var(--space-md);
+  padding: var(--space-md) var(--space-lg);
   border-radius: var(--radius-md);
   font-size: 0.95rem;
-  line-height: 1.5;
+  line-height: 1.7;
 }
 
 .bubbleUser {
+  max-width: 85%;
   background: var(--color-primary);
   color: white;
   border-bottom-right-radius: 2px;
 }
 
 .bubbleAssistant {
+  max-width: 100%;
+  width: 100%;
   background: var(--color-bg);
   color: var(--color-text);
   border: 1px solid var(--color-border);
   border-bottom-left-radius: 2px;
+}
+
+.markdownBody {
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--color-text);
+}
+
+.markdownBody p {
+  margin: 0.5rem 0;
+}
+
+.markdownBody ul, .markdownBody ol {
+  padding-left: 1.4rem;
+  margin: 0.5rem 0;
+}
+
+.markdownBody li {
+  margin-bottom: 0.35rem;
+}
+
+.markdownBody h1, .markdownBody h2, .markdownBody h3, .markdownBody h4 {
+  margin-top: 0.9rem;
+  margin-bottom: 0.4rem;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.markdownBody code {
+  background: rgba(0, 0, 0, 0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.88em;
+}
+
+.markdownBody pre {
+  background: #1e293b;
+  color: #f8fafc;
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+  font-size: 0.88rem;
+}
+
+.markdownBody blockquote {
+  border-left: 3px solid var(--color-primary);
+  padding-left: 10px;
+  margin: 0.6rem 0;
+  color: var(--color-text-secondary);
 }
 
 .quickPrompts {

@@ -9,12 +9,13 @@
 }
 
 .containerWide {
-  max-width: 1280px;
+  max-width: 1520px;
+  width: 95%;
 }
 
 .splitGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  grid-template-columns: minmax(360px, 1fr) minmax(500px, 1.25fr);
   gap: var(--space-xl);
   align-items: start;
 }
@@ -27,18 +28,18 @@
   min-width: 0;
   position: sticky;
   top: 1.5rem;
-  height: calc(100vh - 140px);
-  min-height: 540px;
+  height: calc(100vh - 120px);
+  min-height: 560px;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1080px) {
   .splitGrid {
     grid-template-columns: 1fr;
   }
   .aiSection {
     position: static;
     height: auto;
-    min-height: 480px;
+    min-height: 500px;
     margin-top: 1.5rem;
   }
 }

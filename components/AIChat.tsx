@@ -356,7 +356,7 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
                 msg.role === "user" ? styles.bubbleUser : styles.bubbleAssistant
               }`}
             >
-              <div style={{ wordBreak: "break-word" }}>
+              <div className={styles.markdownBody} style={{ wordBreak: "break-word" }}>
                 <ReactMarkdown>{msg.content}</ReactMarkdown>
               </div>
               {msg.role === "assistant" && msg.id !== "init" && (
