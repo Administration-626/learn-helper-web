@@ -6,6 +6,8 @@ import { Question, MistakeRecord, QuestionBank } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import AIChat from "@/components/AIChat";
 
+import { useQuizStore } from "@/stores/quiz";
+
 type MistakeItem = MistakeRecord & { questionData?: Question, bankName?: string };
 
 export default function MistakesPage() {
@@ -16,25 +18,26 @@ export default function MistakesPage() {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [chatQuestion, setChatQuestion] = useState<Question | null>(null);
 
-  useEffect(() => {
-    loadData();
+  const loadData = React.useCallback(() => {
+    (async () => {
+      const allBanks = await db.banks.toArray();
+      setBanks(allBanks);
+      
+      const m = await getMistakes(selectedBank === "all" ? undefined : selectedBank);
+      
+      const enriched: MistakeItem[] = await Promise.all(m.map(async (record) => {
+        const q = await db.questions.get(record.questionId);
+        const b = allBanks.find(item => item.id === record.bankId);
+        return { ...record, questionData: q, bankName: b?.name };
+      }));
+      
+      setMistakes(enriched.filter(item => item.questionData));
+    })();
   }, [selectedBank]);
 
-  const loadData = async () => {
-    const allBanks = await db.banks.toArray();
-    setBanks(allBanks);
-    
-    const m = await getMistakes(selectedBank === "all" ? undefined : selectedBank);
-    
-    // fetch questions
-    const enriched: MistakeItem[] = await Promise.all(m.map(async (record) => {
-      const q = await db.questions.get(record.questionId);
-      const b = allBanks.find(b => b.id === record.bankId);
-      return { ...record, questionData: q, bankName: b?.name };
-    }));
-    
-    setMistakes(enriched.filter(m => m.questionData));
-  };
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleDelete = async (questionId: number) => {
     await removeMistake(questionId);
@@ -46,7 +49,10 @@ export default function MistakesPage() {
   };
 
   const handleReview = () => {
-    router.push(`/quiz`);
+    if (mistakes.length === 0) return;
+    const questionsToReview = mistakes.map(m => m.questionData!).filter(Boolean);
+    useQuizStore.getState().startMistakesQuiz(questionsToReview);
+    router.push('/quiz');
   };
 
   return (

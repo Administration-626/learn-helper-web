@@ -34,7 +34,7 @@ export default function BankImport({ onImportSuccess }: BankImportProps) {
           } else {
             setPreviewCount(0);
           }
-        } catch (err) {
+        } catch {
           setPreviewCount(null);
         }
       };
@@ -73,8 +73,9 @@ export default function BankImport({ onImportSuccess }: BankImportProps) {
       if (fileInputRef.current) fileInputRef.current.value = "";
       onImportSuccess?.();
 
-    } catch (err: any) {
-      setStatus({ type: "error", msg: err.message || "导入失败" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "导入失败";
+      setStatus({ type: "error", msg });
     } finally {
       setIsImporting(false);
     }
@@ -92,8 +93,9 @@ export default function BankImport({ onImportSuccess }: BankImportProps) {
       await db.importBank("系统架构设计师·真题题库", data);
       setStatus({ type: "success", msg: `🎉 成功载入内置题库《系统架构设计师》，共 ${data.length} 道题目！` });
       onImportSuccess?.();
-    } catch (err: any) {
-      setStatus({ type: "error", msg: err.message || "载入内置题库失败" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "载入内置题库失败";
+      setStatus({ type: "error", msg });
     } finally {
       setIsImporting(false);
     }

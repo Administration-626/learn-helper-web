@@ -11,6 +11,7 @@ interface QuizState {
   isFinished: boolean;
   
   startQuiz: (bankId: number, mode: QuizMode) => Promise<void>;
+  startMistakesQuiz: (mistakeQuestions: Question[]) => void;
   resumeQuiz: () => Promise<void>;
   answerQuestion: (questionId: number, answer: string) => Promise<void>;
   nextQuestion: () => void;
@@ -41,6 +42,20 @@ export const useQuizStore = create<QuizState>()(
             currentIndex: 0,
             answers: {},
             seed
+          },
+          isFinished: false
+        });
+      },
+
+      startMistakesQuiz: (mistakeQuestions: Question[]) => {
+        set({
+          questions: mistakeQuestions,
+          orderedIndices: Array.from({ length: mistakeQuestions.length }, (_, i) => i),
+          currentSession: {
+            bankId: -1,
+            mode: 'sequential',
+            currentIndex: 0,
+            answers: {},
           },
           isFinished: false
         });

@@ -124,28 +124,28 @@ export default function AIChat({ questionId, questionText, onClose }: AIChatProp
       const decoder = new TextDecoder();
       let assistantContent = "";
       const assistantMessageId = (Date.now() + 1).toString();
+      let buffer = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-        // Handle SSE data chunk parsing or raw stream
-        const lines = chunk.split("\n");
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
         for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6).trim();
+          const trimmed = line.trim();
+          if (trimmed.startsWith("data: ")) {
+            const data = trimmed.slice(6).trim();
             if (data === "[DONE]") continue;
             try {
               const parsed = JSON.parse(data);
               const delta = parsed.choices?.[0]?.delta?.content || "";
               assistantContent += delta;
             } catch {
-              // If not JSON format, append raw text
-              assistantContent += data;
+              // buffer chunk was partial
             }
-          } else if (line.trim()) {
-            assistantContent += line;
           }
         }
 
@@ -167,14 +167,15 @@ export default function AIChat({ questionId, questionText, onClose }: AIChatProp
           content: assistantContent,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Chat error:", error);
+      const msg = error instanceof Error ? error.message : "未知错误，请检查网络或配置";
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now().toString(),
           role: "assistant",
-          content: `❌ 请求出错: ${error.message || "未知错误，请检查网络或配置"}`,
+          content: `❌ 请求出错: ${msg}`,
         },
       ]);
     } finally {

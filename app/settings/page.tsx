@@ -5,11 +5,12 @@ import { useSettingsStore } from "@/stores/settings";
 import { LLMConfig } from "@/lib/types";
 
 const PROVIDER_TEMPLATES = {
-  openai: { name: "OpenAI", url: "https://api.openai.com/v1", model: "gpt-3.5-turbo" },
-  claude: { name: "Claude", url: "https://api.anthropic.com/v1", model: "claude-3-haiku-20240307" },
-  gemini: { name: "Gemini", url: "https://generativelanguage.googleapis.com/v1beta", model: "gemini-1.5-flash" },
   deepseek: { name: "DeepSeek", url: "https://api.deepseek.com/v1", model: "deepseek-chat" },
-  bailian: { name: "阿里云百炼", url: "https://dashscope.aliyuncs.com/compatible-mode/v1", model: "qwen-turbo" }
+  bailian: { name: "阿里云百炼 (通义千问)", url: "https://dashscope.aliyuncs.com/compatible-mode/v1", model: "qwen-plus" },
+  openai: { name: "OpenAI", url: "https://api.openai.com/v1", model: "gpt-4o-mini" },
+  siliconflow: { name: "硅基流动 (SiliconFlow)", url: "https://api.siliconflow.cn/v1", model: "deepseek-ai/DeepSeek-V3" },
+  moonshot: { name: "月之暗面 (Moonshot)", url: "https://api.moonshot.cn/v1", model: "moonshot-v1-8k" },
+  gemini: { name: "Gemini (兼容接口)", url: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-1.5-flash" }
 };
 
 export default function SettingsPage() {
@@ -20,16 +21,23 @@ export default function SettingsPage() {
     name: "", apiUrl: "", apiKey: "", model: "", maxTokens: 2000, temperature: 0.7, topP: 1, isActive: false
   });
 
-  const [qaPrompt, setQaPrompt] = useState("你是一个专业的辅导老师，请解答用户的问题，可以分步骤讲解。");
-  const [analysisPrompt, setAnalysisPrompt] = useState("请分析这道题的考点，并解释为什么其他选项是错误的。");
+  const [qaPrompt, setQaPrompt] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("qaPrompt") || "你是一个专业的辅导老师，请解答用户的问题，可以分步骤讲解。";
+    }
+    return "你是一个专业的辅导老师，请解答用户的问题，可以分步骤讲解。";
+  });
+
+  const [analysisPrompt, setAnalysisPrompt] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("analysisPrompt") || "请分析这道题的考点，并解释为什么其他选项是错误的。";
+    }
+    return "请分析这道题的考点，并解释为什么其他选项是错误的。";
+  });
 
   useEffect(() => {
     loadConfigs();
-    const savedQa = localStorage.getItem('qaPrompt');
-    const savedAnalysis = localStorage.getItem('analysisPrompt');
-    if (savedQa) setQaPrompt(savedQa);
-    if (savedAnalysis) setAnalysisPrompt(savedAnalysis);
-  }, []);
+  }, [loadConfigs]);
 
   const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const key = e.target.value as keyof typeof PROVIDER_TEMPLATES;
@@ -94,22 +102,27 @@ export default function SettingsPage() {
             
             <div className={styles.formGroup}>
               <label className={styles.label}>配置名称</label>
-              <input className={styles.input} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="例如: OpenAI GPT-4" />
+              <input className={styles.input} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="例如: DeepSeek V3" />
             </div>
             
             <div className={styles.formGroup}>
               <label className={styles.label}>API URL (Base URL)</label>
-              <input className={styles.input} value={form.apiUrl} onChange={e => setForm({...form, apiUrl: e.target.value})} />
+              <input className={styles.input} value={form.apiUrl} onChange={e => setForm({...form, apiUrl: e.target.value})} placeholder="例如: https://api.deepseek.com/v1" />
             </div>
             
             <div className={styles.formGroup}>
               <label className={styles.label}>API Key</label>
-              <input className={styles.input} type="password" value={form.apiKey} onChange={e => setForm({...form, apiKey: e.target.value})} />
+              <input className={styles.input} type="password" value={form.apiKey} onChange={e => setForm({...form, apiKey: e.target.value})} placeholder="sk-..." />
             </div>
             
             <div className={styles.formGroup}>
               <label className={styles.label}>模型名称 (Model)</label>
-              <input className={styles.input} value={form.model} onChange={e => setForm({...form, model: e.target.value})} />
+              <input className={styles.input} value={form.model} onChange={e => setForm({...form, model: e.target.value})} placeholder="例如: deepseek-chat" />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Max Tokens</label>
+              <input className={styles.input} type="number" value={form.maxTokens || 2000} onChange={e => setForm({...form, maxTokens: parseInt(e.target.value, 10) || 2000})} />
             </div>
 
             <div className={styles.formGroup}>

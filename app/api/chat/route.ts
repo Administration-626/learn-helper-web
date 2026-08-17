@@ -17,6 +17,31 @@ interface ChatRequestPayload {
   };
 }
 
+function isSafeUrl(urlStr: string): boolean {
+  try {
+    const url = new URL(urlStr);
+    if (!['https:', 'http:'].includes(url.protocol)) return false;
+    const host = url.hostname.toLowerCase();
+    if (
+      host === 'localhost' ||
+      host.endsWith('.local') ||
+      host.startsWith('127.') ||
+      host.startsWith('10.') ||
+      host.startsWith('192.168.') ||
+      host.startsWith('169.254.') ||
+      host.startsWith('0.0.0.0') ||
+      host === '::1' ||
+      host === '[::1]' ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+    ) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as ChatRequestPayload;
@@ -29,6 +54,10 @@ export async function POST(req: NextRequest) {
     let endpoint = config.apiUrl.trim().replace(/\/+$/, '');
     if (!endpoint.endsWith('/chat/completions')) {
       endpoint += '/chat/completions';
+    }
+
+    if (!isSafeUrl(endpoint)) {
+      return new Response('Invalid or disallowed API URL', { status: 400 });
     }
 
     const payload = {
@@ -51,7 +80,9 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      return new Response(`OpenAI API error: ${errorText}`, { status: response.status });
+      return new Response(`LLM upstream error (${response.status}): ${errorText.slice(0, 500)}`, {
+        status: response.status,
+      });
     }
 
     return new Response(response.body, {
@@ -61,7 +92,8 @@ export async function POST(req: NextRequest) {
         'Connection': 'keep-alive',
       },
     });
-  } catch (error: any) {
-    return new Response(`Server error: ${error.message}`, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown server error';
+    return new Response(`Server error: ${message}`, { status: 500 });
   }
 }

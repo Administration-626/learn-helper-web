@@ -23,18 +23,24 @@ export class LearnHelperDatabase extends Dexie {
 export const db = new LearnHelperDatabase();
 
 export async function importBank(name: string, questions: Question[]) {
+  const validQuestions = questions.filter(q => q && q.question?.trim());
   return await db.transaction('rw', db.banks, db.questions, async () => {
     const bankId = await db.banks.add({
       name,
       createdAt: Date.now(),
-      questionCount: questions.length
+      questionCount: validQuestions.length
     });
 
-    const questionsWithBankId = questions.map(q => ({
-      ...q,
-      bankId,
-      type: q.type || 'single'
-    }));
+    const questionsWithBankId = validQuestions.map(q => {
+      const cleanAns = (q.answer || '').replace(/\s+/g, '').toUpperCase();
+      const isMulti = q.type === 'multi' || cleanAns.length > 1;
+      return {
+        ...q,
+        bankId,
+        answer: cleanAns,
+        type: (isMulti ? 'multi' : 'single') as 'single' | 'multi'
+      };
+    });
 
     await db.questions.bulkAdd(questionsWithBankId);
     return bankId;
@@ -63,6 +69,19 @@ export async function removeMistake(questionId: number) {
   await db.mistakes.where('questionId').equals(questionId).delete();
 }
 
+export async function deleteBank(bankId: number) {
+  return await db.transaction('rw', db.banks, db.questions, db.mistakes, db.chatMessages, async () => {
+    const qs = await db.questions.where('bankId').equals(bankId).toArray();
+    const qIds = qs.map(q => q.id!).filter(Boolean);
+    await db.banks.delete(bankId);
+    await db.questions.where('bankId').equals(bankId).delete();
+    await db.mistakes.where('bankId').equals(bankId).delete();
+    if (qIds.length > 0) {
+      await db.chatMessages.where('questionId').anyOf(qIds).delete();
+    }
+  });
+}
+
 export async function getMistakes(bankId?: number) {
   if (bankId !== undefined) {
     return await db.mistakes.where('bankId').equals(bankId).toArray();
@@ -73,8 +92,10 @@ export async function getMistakes(bankId?: number) {
 export async function exportBank(bankId: number) {
   const questions = await getQuestions(bankId);
   return questions.map(q => {
-    const { id, bankId, ...rest } = q;
-    return rest;
+    const copy = { ...q };
+    delete copy.id;
+    delete copy.bankId;
+    return copy;
   });
 }
 

@@ -1,7 +1,7 @@
 import { Question, QuizMode } from '@/lib/types';
 
 // Deterministic random shuffle using seed
-export function shuffleWithSeed(arr: any[], seed: number) {
+export function shuffleWithSeed<T>(arr: T[], seed: number): T[] {
   const result = [...arr];
   let currentSeed = seed;
   const random = () => {
@@ -25,13 +25,16 @@ export function generateQuestionOrder(total: number, mode: QuizMode, seed?: numb
 }
 
 export function checkAnswer(userAnswer: string, correctAnswer: string, type: 'single' | 'multi'): boolean {
+  const cleanUser = (userAnswer || '').replace(/\s+/g, '').toUpperCase();
+  const cleanCorrect = (correctAnswer || '').replace(/\s+/g, '').toUpperCase();
+
   if (type === 'single') {
-    return userAnswer === correctAnswer;
+    return cleanUser === cleanCorrect;
   }
   
   // For multi-choice, order doesn't matter (e.g. "AB" == "BA")
-  const sortedUser = userAnswer.split('').sort().join('');
-  const sortedCorrect = correctAnswer.split('').sort().join('');
+  const sortedUser = cleanUser.split('').sort().join('');
+  const sortedCorrect = cleanCorrect.split('').sort().join('');
   return sortedUser === sortedCorrect;
 }
 

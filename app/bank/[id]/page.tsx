@@ -19,16 +19,22 @@ export default function BankDetailPage({ params }: { params: Promise<{ id: strin
   
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
 
-  useEffect(() => {
-    loadData();
+  const loadData = React.useCallback(() => {
+    (async () => {
+      const b = await db.banks.get(bankId);
+      if (b) setBank(b);
+      const qs = await getQuestions(bankId);
+      setQuestions(qs);
+      if (b && b.questionCount !== qs.length) {
+        await db.banks.update(bankId, { questionCount: qs.length });
+        setBank({ ...b, questionCount: qs.length });
+      }
+    })();
   }, [bankId]);
 
-  const loadData = async () => {
-    const b = await db.banks.get(bankId);
-    if (b) setBank(b);
-    const qs = await getQuestions(bankId);
-    setQuestions(qs);
-  };
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const filtered = questions.filter(q => q.question.toLowerCase().includes(search.toLowerCase()));
   const totalPages = Math.ceil(filtered.length / perPage) || 1;
@@ -37,9 +43,6 @@ export default function BankDetailPage({ params }: { params: Promise<{ id: strin
   const handleDelete = async (id: number) => {
     if (confirm("确定删除此题目吗？")) {
       await db.questions.delete(id);
-      if (bank) {
-        await db.banks.update(bankId, { questionCount: bank.questionCount - 1 });
-      }
       loadData();
     }
   };
@@ -50,17 +53,19 @@ export default function BankDetailPage({ params }: { params: Promise<{ id: strin
       return;
     }
     
+    const cleanAns = (editForm.answer || '').replace(/\s+/g, '').toUpperCase();
+    const isMulti = editForm.type === 'multi' || cleanAns.length > 1;
+
     const payload = {
       ...editForm,
       bankId,
+      answer: cleanAns,
+      type: isMulti ? 'multi' : 'single',
       options: editForm.options || {},
     } as Question;
 
     if (editingId === "new") {
       await db.questions.add(payload);
-      if (bank) {
-        await db.banks.update(bankId, { questionCount: bank.questionCount + 1 });
-      }
     } else {
       await db.questions.put({ ...payload, id: editingId as number });
     }

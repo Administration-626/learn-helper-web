@@ -2,29 +2,26 @@
 import React, { useEffect, useState } from "react";
 import styles from "./page.module.css";
 import BankImport from "@/components/BankImport";
-import { db, exportBank } from "@/lib/db";
+import { db, exportBank, deleteBank } from "@/lib/db";
 import { QuestionBank } from "@/lib/types";
 import Link from "next/link";
 
 export default function BankManagementPage() {
   const [banks, setBanks] = useState<QuestionBank[]>([]);
 
-  useEffect(() => {
-    loadBanks();
+  const loadBanks = React.useCallback(() => {
+    db.banks.orderBy("createdAt").reverse().toArray().then(data => {
+      setBanks(data);
+    });
   }, []);
 
-  const loadBanks = async () => {
-    const data = await db.banks.orderBy("createdAt").reverse().toArray();
-    setBanks(data);
-  };
+  useEffect(() => {
+    loadBanks();
+  }, [loadBanks]);
 
   const handleDelete = async (id: number, name: string) => {
     if (window.confirm(`确定要删除题库 "${name}" 吗？此操作不可逆。`)) {
-      await db.transaction('rw', db.banks, db.questions, db.mistakes, async () => {
-        await db.banks.delete(id);
-        await db.questions.where('bankId').equals(id).delete();
-        await db.mistakes.where('bankId').equals(id).delete();
-      });
+      await deleteBank(id);
       loadBanks();
     }
   };

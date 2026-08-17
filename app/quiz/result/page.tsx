@@ -95,30 +95,33 @@ ${stats.incorrectQuestions.map((q, idx) => `${idx + 1}. [${q.tag || "通用"}] $
       const decoder = new TextDecoder();
       
       let content = "";
+      let buffer = "";
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
         for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6).trim();
+          const trimmed = line.trim();
+          if (trimmed.startsWith("data: ")) {
+            const data = trimmed.slice(6).trim();
             if (data === "[DONE]") continue;
             try {
               const parsed = JSON.parse(data);
               content += parsed.choices?.[0]?.delta?.content || "";
             } catch {
-              content += data;
+              // buffer chunk was partial
             }
-          } else if (line.trim()) {
-            content += line;
           }
         }
         setAiAnalysis(content);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("AI Analysis failed:", error);
-      setAiAnalysis(`AI 分析请求失败: ${error.message || "未知错误"}`);
+      const msg = error instanceof Error ? error.message : "未知错误";
+      setAiAnalysis(`AI 分析请求失败: ${msg}`);
     } finally {
       setIsAnalyzing(false);
     }

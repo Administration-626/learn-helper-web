@@ -22,21 +22,31 @@ export default function QuizPage() {
   const [localAnswer, setLocalAnswer] = useState<string>("");
   const [showAIChat, setShowAIChat] = useState(false);
 
+  const bankId = currentSession?.bankId;
+  const questionsCount = questions.length;
+
   useEffect(() => {
+    let isMounted = true;
     const init = async () => {
       const allBanks = await db.banks.toArray();
+      if (!isMounted) return;
       setBanks(allBanks);
       if (allBanks.length > 0 && selectedBankId === "") {
         setSelectedBankId(allBanks[0].id!);
       }
 
-      if (currentSession && questions.length === 0) {
-        await resumeQuiz();
+      if (bankId !== undefined && questionsCount === 0) {
+        if (bankId === -1) {
+          resetQuiz();
+        } else {
+          await resumeQuiz();
+        }
       }
-      setIsLoading(false);
+      if (isMounted) setIsLoading(false);
     };
     init();
-  }, [currentSession, questions.length, resumeQuiz, selectedBankId]);
+    return () => { isMounted = false; };
+  }, [bankId, questionsCount, resetQuiz, resumeQuiz, selectedBankId]);
 
   const handleStart = async () => {
     if (selectedBankId === "") return;
@@ -135,8 +145,10 @@ export default function QuizPage() {
   }
 
   const currentIdx = orderedIndices[currentSession.currentIndex];
-  const currentQuestion = questions[currentIdx] || questions.find(q => q.id === questions[currentIdx]?.id);
-  const bank = banks.find(b => b.id === currentSession.bankId);
+  const currentQuestion = questions[currentIdx];
+  const bankName = currentSession.bankId === -1 
+    ? "错题复习专场" 
+    : (banks.find(b => b.id === currentSession.bankId)?.name || "题库");
   const modeLabel = currentSession.mode === 'sequential' ? '顺序' : currentSession.mode === 'random' ? '随机' : '背诵';
 
   if (!currentQuestion) {
@@ -183,7 +195,7 @@ export default function QuizPage() {
     <div className={styles.container}>
       <header className={styles.header}>
         <div className={styles.headerLeft}>
-          <span className={styles.bankName}>{bank?.name || "题库"}</span>
+          <span className={styles.bankName}>{bankName}</span>
           <span className={styles.modeBadge}>{modeLabel}</span>
         </div>
         <div className={styles.headerRight}>
