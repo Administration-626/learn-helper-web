@@ -48,7 +48,16 @@ export async function importBank(name: string, questions: Question[]) {
 }
 
 export async function getQuestions(bankId: number) {
-  return await db.questions.where('bankId').equals(bankId).toArray();
+  const list = await db.questions.where('bankId').equals(bankId).toArray();
+  return list.map(q => {
+    const cleanAns = (q.answer || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    const isMulti = q.type === 'multi' || cleanAns.length > 1;
+    return {
+      ...q,
+      answer: cleanAns,
+      type: (isMulti ? 'multi' : 'single') as 'single' | 'multi'
+    };
+  });
 }
 
 export async function addMistake(questionId: number, bankId: number, userAnswer: string) {

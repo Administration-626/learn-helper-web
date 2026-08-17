@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Question, QuizSession, QuizMode } from '@/lib/types';
 import { getQuestions, addMistake } from '@/lib/db';
-import { generateQuestionOrder, checkAnswer } from '@/lib/quiz-engine';
+import { generateQuestionOrder, checkAnswer, isMultiChoiceQuestion } from '@/lib/quiz-engine';
 
 interface QuizState {
   currentSession: QuizSession | null;
@@ -80,7 +80,7 @@ export const useQuizStore = create<QuizState>()(
         // Add mistake to DB if incorrect and not in recite mode
         if (currentSession.mode !== 'recite') {
           const question = questions.find(q => q.id === questionId);
-          if (question && !checkAnswer(answer, question.answer, question.type || 'single')) {
+          if (question && !checkAnswer(answer, question.answer, isMultiChoiceQuestion(question) ? 'multi' : 'single')) {
             await addMistake(questionId, currentSession.bankId, answer);
           }
         }

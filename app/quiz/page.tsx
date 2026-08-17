@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import { useQuizStore } from "@/stores/quiz";
 import { db, getQuestions } from "@/lib/db";
-import { generateQuestionOrder } from "@/lib/quiz-engine";
+import { generateQuestionOrder, isMultiChoiceQuestion } from "@/lib/quiz-engine";
 import type { QuestionBank, QuizMode } from "@/lib/types";
 import QuestionCard from "@/components/QuestionCard";
 import AIChat, { type AIChatLayout } from "@/components/AIChat";
@@ -206,7 +206,7 @@ export default function QuizPage() {
   const handleSelectOption = async (optId: string) => {
     if (isSubmitted || currentSession.mode === "recite") return;
     
-    if (currentQuestion.type === "multi") {
+    if (isMultiChoiceQuestion(currentQuestion)) {
       let currentArr = localAnswer ? localAnswer.split("") : [];
       if (currentArr.includes(optId)) {
         currentArr = currentArr.filter(id => id !== optId);

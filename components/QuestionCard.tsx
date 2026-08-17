@@ -11,6 +11,7 @@ import { formatCjkMarkdown } from "@/lib/markdown";
 import ExplanationModal from "./ExplanationModal";
 import { EditIcon } from "./Icons";
 import { updateQuestionExplanation } from "@/lib/db";
+import { isMultiChoiceQuestion } from "@/lib/quiz-engine";
 import { useQuizStore } from "@/stores/quiz";
 
 interface QuestionCardProps {
@@ -40,7 +41,14 @@ export default function QuestionCard({
 }: QuestionCardProps) {
   const [showEditModal, setShowEditModal] = useState(false);
 
-  const isMultiChoice = question.type === "multi";
+  const isMultiChoice = isMultiChoiceQuestion(question);
+  const cleanAns = (question.answer || "").replace(/[^A-Za-z0-9]/g, "");
+  const typeLabel = isMultiChoice
+    ? cleanAns.length > 1
+      ? `多选题 (${cleanAns.length}项)`
+      : "多选题"
+    : "单选题";
+
   const isRecite = mode === "recite";
   const isExam = mode === "exam";
 
@@ -82,7 +90,7 @@ export default function QuestionCard({
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           {question.tag && <span className={styles.tag}>{question.tag}</span>}
           <span className={styles.tag}>
-            {question.type === "multi" ? "多选题" : "单选题"}
+            {typeLabel}
           </span>
         </div>
       </div>

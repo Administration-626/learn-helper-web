@@ -24,15 +24,23 @@ export function generateQuestionOrder(total: number, mode: QuizMode, seed?: numb
   return indices;
 }
 
-export function checkAnswer(userAnswer: string, correctAnswer: string, type: 'single' | 'multi'): boolean {
+export function isMultiChoiceQuestion(question?: Question | Partial<Question> | null): boolean {
+  if (!question) return false;
+  if (question.type === 'multi') return true;
+  const cleanAns = (question.answer || '').replace(/[^A-Za-z0-9]/g, '');
+  return cleanAns.length > 1;
+}
+
+export function checkAnswer(userAnswer: string, correctAnswer: string, type?: 'single' | 'multi'): boolean {
   const cleanUser = (userAnswer || '').replace(/\s+/g, '').toUpperCase();
   const cleanCorrect = (correctAnswer || '').replace(/\s+/g, '').toUpperCase();
 
-  if (type === 'single') {
+  const isMulti = type === 'multi' || cleanCorrect.length > 1;
+  if (!isMulti) {
     return cleanUser === cleanCorrect;
   }
   
-  // For multi-choice, order doesn't matter (e.g. "AB" == "BA")
+  // For multi-choice or multi-blank questions, sort letters before comparison
   const sortedUser = cleanUser.split('').sort().join('');
   const sortedCorrect = cleanCorrect.split('').sort().join('');
   return sortedUser === sortedCorrect;
