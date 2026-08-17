@@ -279,6 +279,7 @@ export default function QuizPage() {
           {isBottom && (
             <div style={{ marginTop: "1.5rem" }}>
               <AIChat 
+                key={currentQuestion?.id ?? currentSession.currentIndex}
                 question={currentQuestion}
                 userAnswer={displayAnswer}
                 layout="bottom"
@@ -292,6 +293,7 @@ export default function QuizPage() {
         {isSplit && (
           <div className={styles.aiSection}>
             <AIChat 
+              key={currentQuestion?.id ?? currentSession.currentIndex}
               question={currentQuestion}
               userAnswer={displayAnswer}
               layout="split"
@@ -304,6 +306,7 @@ export default function QuizPage() {
 
       {isDrawer && (
         <AIChat 
+          key={currentQuestion?.id ?? currentSession.currentIndex}
           question={currentQuestion}
           userAnswer={displayAnswer}
           layout="drawer"

@@ -72,17 +72,30 @@ export default function AIChat({
 
   useEffect(() => {
     let isCurrent = true;
+
+    // Abort previous in-flight AI stream if question changed
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+
     (async () => {
       let currentQ = propQuestion;
       if (!currentQ && resolvedQId) {
         currentQ = await db.questions.get(resolvedQId);
-        if (isCurrent && currentQ) {
-          setActiveQuestion(currentQ);
-        }
       }
 
+      if (!isCurrent) return;
+      setIsLoading(false);
+      setSavedExplanationId(null);
+      setHoveredSavedId(null);
+
       if (currentQ) {
-        setOriginalExplanation(prev => (prev === null ? (currentQ.explanation || "") : prev));
+        setActiveQuestion(currentQ);
+        setOriginalExplanation(currentQ.explanation || "");
+      } else {
+        setActiveQuestion(null);
+        setOriginalExplanation("");
       }
 
       try {
@@ -324,7 +337,7 @@ ${content}
       }
 
       // Build rich context about the question
-      const q = activeQuestion;
+      const q = propQuestion || activeQuestion;
       const optionsText = q?.options 
         ? Object.entries(q.options).map(([k, v]) => `  ${k}. ${v}`).join("\n") 
         : "(无选项)";
@@ -459,7 +472,7 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
       setIsLoading(false);
       abortControllerRef.current = null;
     }
-  }, [activeQuestion, isLoading, messages, propQText, resolvedQId, userAnswer]);
+  }, [activeQuestion, isLoading, messages, propQText, propQuestion, resolvedQId, userAnswer]);
 
   const contentPanel = (
     <div className={`${styles.panel} ${layout === "split" ? styles.panelInline : layout === "bottom" ? styles.panelBottom : ""}`}>
