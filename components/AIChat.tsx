@@ -57,8 +57,10 @@ export default function AIChat({
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [activeQuestion, setActiveQuestion] = useState<Question | null>(propQuestion || null);
+  const [showScrollBottomBtn, setShowScrollBottomBtn] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isAtBottomRef = useRef(true);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const resolvedQId = propQuestion?.id || propQId || 0;
@@ -101,8 +103,23 @@ export default function AIChat({
   }, [propQuestion, propQText, resolvedQId]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (isAtBottomRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
+
+  const handleMessageScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const isNearBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 60;
+    isAtBottomRef.current = isNearBottom;
+    setShowScrollBottomBtn(!isNearBottom && target.scrollHeight > target.clientHeight + 80);
+  };
+
+  const scrollToBottom = () => {
+    isAtBottomRef.current = true;
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    setShowScrollBottomBtn(false);
+  };
 
   // Handle ESC key to close
   useEffect(() => {
@@ -349,44 +366,55 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
         </div>
       </div>
 
-      <div className={styles.messageList}>
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`${styles.messageWrapper} ${
-              msg.role === "user" ? styles.wrapperUser : styles.wrapperAssistant
-            }`}
-          >
+      <div className={styles.messageListContainer}>
+        <div className={styles.messageList} onScroll={handleMessageScroll}>
+          {messages.map((msg) => (
             <div
-              className={`${styles.bubble} ${
-                msg.role === "user" ? styles.bubbleUser : styles.bubbleAssistant
+              key={msg.id}
+              className={`${styles.messageWrapper} ${
+                msg.role === "user" ? styles.wrapperUser : styles.wrapperAssistant
               }`}
             >
-              <div className={styles.markdownBody} style={{ wordBreak: "break-word" }}>
-                <ReactMarkdown>{formatCjkMarkdown(msg.content)}</ReactMarkdown>
-              </div>
-              {msg.role === "assistant" && msg.id !== "init" && (
-                <div className={styles.bubbleFooter}>
-                  <button
-                    type="button"
-                    className={styles.copyBtn}
-                    onClick={() => handleCopy(msg.content, msg.id)}
-                  >
-                    {copiedId === msg.id ? "✓ 已复制" : "📋 复制"}
-                  </button>
+              <div
+                className={`${styles.bubble} ${
+                  msg.role === "user" ? styles.bubbleUser : styles.bubbleAssistant
+                }`}
+              >
+                <div className={styles.markdownBody} style={{ wordBreak: "break-word" }}>
+                  <ReactMarkdown>{formatCjkMarkdown(msg.content)}</ReactMarkdown>
                 </div>
-              )}
+                {msg.role === "assistant" && msg.id !== "init" && (
+                  <div className={styles.bubbleFooter}>
+                    <button
+                      type="button"
+                      className={styles.copyBtn}
+                      onClick={() => handleCopy(msg.content, msg.id)}
+                    >
+                      {copiedId === msg.id ? "✓ 已复制" : "📋 复制"}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-        {isLoading && (
-          <div className={`${styles.messageWrapper} ${styles.wrapperAssistant}`}>
-            <div className={`${styles.bubble} ${styles.bubbleAssistant}`}>
-              <span className={styles.loadingDots}>AI 正在组织思路解答中...</span>
+          ))}
+          {isLoading && (
+            <div className={`${styles.messageWrapper} ${styles.wrapperAssistant}`}>
+              <div className={`${styles.bubble} ${styles.bubbleAssistant}`}>
+                <span className={styles.loadingDots}>AI 正在组织思路解答中...</span>
+              </div>
             </div>
-          </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+        {showScrollBottomBtn && (
+          <button
+            type="button"
+            className={styles.scrollBottomBtn}
+            onClick={scrollToBottom}
+          >
+            ↓ 滚动至最新
+          </button>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       <div className={styles.quickPrompts}>
