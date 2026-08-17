@@ -18,7 +18,7 @@ export default function SettingsPage() {
   const [showForm, setShowForm] = useState(false);
   
   const [form, setForm] = useState<Partial<LLMConfig>>({
-    name: "", apiUrl: "", apiKey: "", model: "", maxTokens: 2000, temperature: 0.7, topP: 1, isActive: false
+    name: "", apiUrl: "", apiKey: "", model: "", maxTokens: 4096, temperature: 0.7, topP: 1, isActive: false
   });
 
   const [qaPrompt, setQaPrompt] = useState<string>(() => {
@@ -64,7 +64,7 @@ export default function SettingsPage() {
       await addConfig(form as Omit<LLMConfig, 'id'>);
     }
     setShowForm(false);
-    setForm({ name: "", apiUrl: "", apiKey: "", model: "", maxTokens: 2000, temperature: 0.7, topP: 1, isActive: false });
+    setForm({ name: "", apiUrl: "", apiKey: "", model: "", maxTokens: 4096, temperature: 0.7, topP: 1, isActive: false });
   };
 
   const handleEdit = (c: LLMConfig) => {
