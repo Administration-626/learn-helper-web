@@ -14,6 +14,7 @@ interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+  reasoning?: string;
 }
 
 export type AIChatLayout = "split" | "bottom" | "drawer";
@@ -53,6 +54,7 @@ export default function AIChat({
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [savedExplanationId, setSavedExplanationId] = useState<string | null>(null);
   const [hoveredSavedId, setHoveredSavedId] = useState<string | null>(null);
@@ -288,6 +290,11 @@ ${content}
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
+    setElapsedSeconds(0);
+
+    const timerId = setInterval(() => {
+      setElapsedSeconds(s => s + 1);
+    }, 1000);
 
     // Save user message to IndexedDB
     try {
@@ -312,6 +319,7 @@ ${content}
           },
         ]);
         setIsLoading(false);
+        clearInterval(timerId);
         return;
       }
 
@@ -357,15 +365,16 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
 
       if (!response.ok) {
         const errText = await response.text();
-        throw new Error(errText || `请求失败: ${response.status}`);
+        throw new Error(errText || `请求失败 (${response.status})`);
       }
 
-      if (!response.body) throw new Error("No response body");
+      if (!response.body) throw new Error("服务器未返回响应体 (No response body)");
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       const assistantMessageId = createMessageId();
       let assistantText = "";
+      let assistantReasoning = "";
       let buffer = "";
 
       while (true) {
@@ -383,27 +392,48 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
             if (data === "[DONE]") continue;
             try {
               const parsed = JSON.parse(data);
-              const delta = parsed.choices?.[0]?.delta?.content || "";
-              assistantText += delta;
-            } catch {
-              // buffer chunk was partial
+              if (parsed.error) {
+                throw new Error(parsed.error.message || JSON.stringify(parsed.error));
+              }
+              const delta = parsed.choices?.[0]?.delta;
+              const textDelta = delta?.content || parsed.choices?.[0]?.text || "";
+              const reasoningDelta = delta?.reasoning_content || delta?.reasoning || "";
+
+              if (textDelta) assistantText += textDelta;
+              if (reasoningDelta) assistantReasoning += reasoningDelta;
+            } catch (parseErr) {
+              if (parseErr instanceof Error && !parseErr.message.includes("Unexpected end of JSON")) {
+                throw parseErr;
+              }
             }
           }
         }
 
         const currentText = assistantText;
-        setMessages((prev) => {
-          const last = prev[prev.length - 1];
-          if (last && last.id === assistantMessageId) {
-            return [...prev.slice(0, -1), { ...last, content: currentText }];
-          } else {
-            return [...prev, { id: assistantMessageId, role: "assistant", content: currentText }];
-          }
-        });
+        const currentReasoning = assistantReasoning;
+        if (currentText || currentReasoning) {
+          setMessages((prev) => {
+            const last = prev[prev.length - 1];
+            if (last && last.id === assistantMessageId) {
+              return [...prev.slice(0, -1), { ...last, content: currentText, reasoning: currentReasoning }];
+            } else {
+              return [...prev, { id: assistantMessageId, role: "assistant", content: currentText, reasoning: currentReasoning }];
+            }
+          });
+        }
       }
 
-      // Save assistant response to IndexedDB
-      if (assistantText) {
+      if (!assistantText && !assistantReasoning) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: createMessageId(),
+            role: "assistant",
+            content: "⚠️ 大模型未返回任何有效文本内容。请检查【设置】中的模型名称（Model）配置是否正确，或尝试重新提问。",
+          },
+        ]);
+      } else if (assistantText) {
+        // Save assistant response to IndexedDB
         await saveChatMessage({
           questionId: resolvedQId,
           role: "assistant",
@@ -415,7 +445,7 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
         return;
       }
       console.error("Chat error:", error);
-      const msg = error instanceof Error ? error.message : "未知错误，请检查网络或配置";
+      const msg = error instanceof Error ? error.message : "未知错误，请检查网络或大模型配置";
       setMessages((prev) => [
         ...prev,
         {
@@ -425,6 +455,7 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
         },
       ]);
     } finally {
+      clearInterval(timerId);
       setIsLoading(false);
       abortControllerRef.current = null;
     }
@@ -493,10 +524,20 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
                   msg.role === "user" ? styles.bubbleUser : styles.bubbleAssistant
                 }`}
               >
-                <div className={styles.markdownBody} style={{ wordBreak: "break-word" }}>
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{formatCjkMarkdown(msg.content)}</ReactMarkdown>
-                </div>
-                {msg.role === "assistant" && msg.id !== "init" && (() => {
+                {msg.reasoning && (
+                  <details open={isLoading} className={styles.reasoningBox}>
+                    <summary className={styles.reasoningSummary}>
+                      💭 深度思考过程 ({msg.reasoning.length} 字)
+                    </summary>
+                    <div className={styles.reasoningContent}>{msg.reasoning}</div>
+                  </details>
+                )}
+                {msg.content && (
+                  <div className={styles.markdownBody} style={{ wordBreak: "break-word" }}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{formatCjkMarkdown(msg.content)}</ReactMarkdown>
+                  </div>
+                )}
+                {msg.role === "assistant" && msg.id !== "init" && msg.content && (() => {
                   const currentExpTrim = (activeQuestion?.explanation || "").trim();
                   const msgTrim = msg.content.trim();
                   const isAdopted = savedExplanationId === msg.id || (currentExpTrim.length > 0 && currentExpTrim === msgTrim);
@@ -586,10 +627,22 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
               </div>
             </div>
           ))}
-          {isLoading && (
+          {isLoading && !messages[messages.length - 1]?.content && !messages[messages.length - 1]?.reasoning && (
             <div className={`${styles.messageWrapper} ${styles.wrapperAssistant}`}>
               <div className={`${styles.bubble} ${styles.bubbleAssistant}`}>
-                <span className={styles.loadingDots}>AI 正在组织思路解答中...</span>
+                <div className={styles.loadingWrapper}>
+                  <div className={styles.loadingDots}>
+                    <span>⏳ AI 正在组织思路解答中...</span>
+                    <span style={{ fontWeight: 600, color: "var(--color-primary)" }}>
+                      ({elapsedSeconds}s)
+                    </span>
+                  </div>
+                  {elapsedSeconds >= 12 && (
+                    <div className={styles.loadingHint}>
+                      💡 大模型正在深度推理或网络排队中，若等待时间过长可点击下方【🛑 停止】或检查【设置】中的 API 服务
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}

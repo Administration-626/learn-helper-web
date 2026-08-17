@@ -444,7 +444,56 @@
 }
 
 .loadingDots {
-  font-style: italic;
+  font-style: normal;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.loadingWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.loadingHint {
+  font-size: 0.78rem;
   color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.reasoningBox {
+  margin: 6px 0 10px 0;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(37, 99, 235, 0.03);
+  overflow: hidden;
+  font-size: 0.85rem;
+}
+
+.reasoningSummary {
+  padding: 6px 10px;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--color-primary, #2563eb);
+  background: rgba(37, 99, 235, 0.06);
+  user-select: none;
+}
+
+.reasoningSummary:hover {
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.reasoningContent {
+  padding: 8px 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  border-top: 1px solid rgba(37, 99, 235, 0.1);
+  font-family: inherit;
+  font-size: 0.82rem;
+  max-height: 240px;
+  overflow-y: auto;
 }
 
