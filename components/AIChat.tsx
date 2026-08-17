@@ -59,12 +59,15 @@ export default function AIChat({
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [savedExplanationId, setSavedExplanationId] = useState<string | null>(null);
+  const [hoveredSavedId, setHoveredSavedId] = useState<string | null>(null);
   const [activeQuestion, setActiveQuestion] = useState<Question | null>(propQuestion || null);
   const [showScrollBottomBtn, setShowScrollBottomBtn] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isAtBottomRef = useRef(true);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const originalExplanationRef = useRef<string | null>(null);
+  const isTogglingExplanationRef = useRef(false);
 
   const resolvedQId = propQuestion?.id || propQId || 0;
 
@@ -74,7 +77,13 @@ export default function AIChat({
       let currentQ = propQuestion;
       if (!currentQ && resolvedQId) {
         currentQ = await db.questions.get(resolvedQId);
-        if (isCurrent && currentQ) setActiveQuestion(currentQ);
+        if (isCurrent && currentQ) {
+          setActiveQuestion(currentQ);
+        }
+      }
+
+      if (currentQ && originalExplanationRef.current === null) {
+        originalExplanationRef.current = currentQ.explanation || "";
       }
 
       try {
@@ -169,15 +178,35 @@ export default function AIChat({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleSaveAsExplanation = async (content: string, msgId: string) => {
-    if (!resolvedQId) return;
+  const handleToggleExplanation = async (content: string, msgId: string) => {
+    if (!resolvedQId || isTogglingExplanationRef.current) return;
+    isTogglingExplanationRef.current = true;
+
     try {
-      await updateQuestionExplanation(resolvedQId, content);
-      setActiveQuestion(prev => prev ? { ...prev, explanation: content } : null);
-      useQuizStore.getState().updateQuestionExplanation(resolvedQId, content);
-      setSavedExplanationId(msgId);
+      if (savedExplanationId === msgId) {
+        // Rollback / Cancel: revert back to original question explanation
+        const fallback = originalExplanationRef.current || "";
+        await updateQuestionExplanation(resolvedQId, fallback);
+        setActiveQuestion(prev => prev ? { ...prev, explanation: fallback } : null);
+        useQuizStore.getState().updateQuestionExplanation(resolvedQId, fallback);
+        setSavedExplanationId(null);
+      } else {
+        // Apply: save this AI content as question explanation
+        if (originalExplanationRef.current === null && activeQuestion) {
+          originalExplanationRef.current = activeQuestion.explanation || "";
+        }
+        await updateQuestionExplanation(resolvedQId, content);
+        setActiveQuestion(prev => prev ? { ...prev, explanation: content } : null);
+        useQuizStore.getState().updateQuestionExplanation(resolvedQId, content);
+        setSavedExplanationId(msgId);
+      }
     } catch (err) {
-      console.error("Failed to save explanation:", err);
+      console.error("Failed to toggle explanation:", err);
+    } finally {
+      // 500ms cooldown to prevent rapid multi-clicks
+      setTimeout(() => {
+        isTogglingExplanationRef.current = false;
+      }, 500);
     }
   };
 
@@ -452,11 +481,23 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
                     {resolvedQId > 0 && (
                       <button
                         type="button"
-                        className={`${styles.copyBtn} ${savedExplanationId === msg.id ? styles.copyBtnSuccess : ""}`}
-                        onClick={() => handleSaveAsExplanation(msg.content, msg.id)}
-                        title="将此条 AI 解答持久化保存为该题的官方解析"
+                        className={`${styles.copyBtn} ${
+                          savedExplanationId === msg.id ? styles.savedBtnActive : ""
+                        }`}
+                        onClick={() => handleToggleExplanation(msg.content, msg.id)}
+                        onMouseEnter={() => setHoveredSavedId(msg.id)}
+                        onMouseLeave={() => setHoveredSavedId(null)}
+                        title={
+                          savedExplanationId === msg.id
+                            ? "点击取消并恢复题目的原始解析"
+                            : "将此条 AI 解答持久化保存为该题的官方解析"
+                        }
                       >
-                        {savedExplanationId === msg.id ? "✓ 已设为本题解析" : "📌 设为本题解析"}
+                        {savedExplanationId === msg.id
+                          ? hoveredSavedId === msg.id
+                            ? "✕ 取消设为解析"
+                            : "✓ 已设为本题解析"
+                          : "📌 设为本题解析"}
                       </button>
                     )}
                     <button
