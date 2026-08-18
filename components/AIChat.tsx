@@ -48,11 +48,22 @@ interface AIChatProps {
   onClose: () => void;
 }
 
+export const DEFAULT_QA_SYSTEM_PROMPT = `你是一名国家软考（系统架构设计师/软件设计师）辅导名师。回答请严谨、精炼、直击考点。
+
+【解题与考点解析规范】：
+1. 严禁编造生拼硬凑、不知所云的打油诗或首字谐音口诀。
+2. 解题技巧必须按以下 3 个维度结构化输出：
+   - 🎯【题眼识别与秒杀词】：提取题干中最具辨识度的特征词（例如：“心跳检测/故障恢复” → 对应“可用性”；“修改缺陷难易度” → 对应“可维护性”；“用户数剧增维持质量” → 对应“可伸缩性”）。
+   - ⚖️【核心差异对比表】：针对本题容易混淆的概念，用简洁 Markdown 表格对比它们的「关注核心」、「考查场景」与「典型策略」。
+   - 🚫【避坑与排除法】：指出出题人常见的设坑套路（如偷换概念、绝对化用词、因果倒置）。
+3. 如果学生答错了，请重点剖析错因与易混考点。
+4. 【排版规范】：涉及带引号或书名号的名词加粗时，请将标点置于加粗符号外（如“**左右法**”或《**教程**》），避免标点紧贴星号导致 Markdown 解析失败。`;
+
 const QUICK_PROMPTS = [
   "为什么选这个答案？",
   "逐个选项分析对错",
   "核心考点深度剖析",
-  "解题技巧与速记要点"
+  "题眼秒杀与避坑技巧"
 ];
 
 let idCounter = 0;
@@ -329,6 +340,7 @@ ${content}
     }, 1000);
 
     // Save user message to IndexedDB
+    let frontendTimeoutId: ReturnType<typeof setTimeout> | undefined;
     try {
       await saveChatMessage({
         questionId: resolvedQId,
@@ -373,7 +385,7 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
 `;
 
       const customQaPrompt = typeof window !== "undefined" ? localStorage.getItem("qaPrompt") : null;
-      const baseSystemPrompt = customQaPrompt || "你是一个专业的软考与计算机辅导名师，请基于题目背景耐心解答学生的问题，分步骤剖析考点。如果学生询问答案、原因或解析，请直接给出详尽深入的解答和考点分析。如果学生答错了，请重点剖析其错因。\n\n【排版规范】：涉及带引号或书名号的名词加粗时，请将标点置于加粗符号外（如“**左右法**”或《**教程**》），避免标点紧贴星号导致 Markdown 解析失败。";
+      const baseSystemPrompt = customQaPrompt || DEFAULT_QA_SYSTEM_PROMPT;
       
       const fullSystemPrompt = `${baseSystemPrompt}\n\n${questionContext}`;
 
@@ -386,15 +398,18 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
+      // 前端 60 秒超时，避免请求无限挂起
+      frontendTimeoutId = setTimeout(() => controller.abort(), 60000);
+
       const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: apiMessages,
-          config: activeConfig,
-        }),
-        signal: controller.signal,
-      });
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: apiMessages,
+            config: activeConfig,
+          }),
+          signal: controller.signal,
+        });
 
       if (!response.ok) {
         const errText = await response.text();
@@ -480,6 +495,15 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
       }
     } catch (error: unknown) {
       if (error instanceof DOMException && error.name === "AbortError") {
+        // 超时或用户手动停止，提示用户检查配置
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: createMessageId(),
+            role: "assistant",
+            content: "⏱️ 请求已终止（超时或手动停止）。如网络正常，请检查【设置】中的 API 地址、Key 和模型名是否正确。",
+          },
+        ]);
         return;
       }
       console.error("Chat error:", error);
@@ -493,6 +517,7 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
         },
       ]);
     } finally {
+      clearTimeout(frontendTimeoutId);
       clearInterval(timerId);
       setIsLoading(false);
       abortControllerRef.current = null;
