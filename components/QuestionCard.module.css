@@ -24,9 +24,28 @@
   font-weight: 600;
 }
 
+.origNumberBadge {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  background: var(--color-bg);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.yearTag {
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+}
+
 .tag {
   background: var(--color-bg);
-  color: var(--color-primary);
+  color: var(--color-text);
   font-size: 0.8rem;
   padding: 2px 8px;
   border-radius: var(--radius-sm);
@@ -42,8 +61,19 @@
 .questionText {
   font-size: 1.15rem;
   font-weight: 500;
-  line-height: 1.6;
+  line-height: 1.65;
   color: var(--color-text);
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.questionText ol, .questionText ul {
+  padding-left: 1.3rem;
+  margin: 0.5rem 0;
+}
+
+.questionText li {
+  margin-bottom: 0.25rem;
 }
 
 .questionText pre {
@@ -74,7 +104,7 @@
 
 .option {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   text-align: left;
   padding: var(--space-md);
   background: var(--color-surface);
@@ -82,6 +112,8 @@
   border-radius: var(--radius-md);
   transition: all 0.2s ease;
   cursor: pointer;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .option:hover:not(.disabled) {
@@ -109,25 +141,45 @@
 }
 
 .optionLabel {
-  font-weight: bold;
-  margin-right: var(--space-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 4px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.88rem;
+  background: var(--color-bg);
   color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  flex-shrink: 0;
+  margin-right: var(--space-sm);
 }
 
 .option.selected .optionLabel {
-  color: var(--color-accent);
+  background: var(--color-accent);
+  color: white;
+  border-color: var(--color-accent);
 }
 
 .option.correct .optionLabel {
-  color: var(--color-success);
+  background: var(--color-success);
+  color: white;
+  border-color: var(--color-success);
 }
 
 .option.incorrect .optionLabel {
-  color: var(--color-error);
+  background: var(--color-error);
+  color: white;
+  border-color: var(--color-error);
 }
 
 .optionText {
   flex: 1;
+  min-width: 0;
+  line-height: 1.6;
+  padding-top: 2px;
 }
 
 .feedback {

@@ -157,9 +157,18 @@ export default function BankDetailPage({ params }: { params: Promise<{ id: strin
               <>
                 <div className={styles.qHeader}>
                   <div className={styles.qText}>
-                    <span style={{ color: 'var(--color-text-secondary)', marginRight: '8px' }}>
-                      {q.number ? `${q.number}.` : ""} {q.tag ? `[${q.tag}]` : ""}
-                    </span>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '6px' }}>
+                      {q.number && (
+                        <span style={{ fontSize: '0.78rem', background: 'var(--color-bg)', padding: '1px 6px', borderRadius: '4px', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>
+                          第 {q.number} 题
+                        </span>
+                      )}
+                      {q.tag && (
+                        <span style={{ fontSize: '0.78rem', background: 'rgba(37, 99, 235, 0.08)', color: 'var(--color-primary)', padding: '1px 6px', borderRadius: '4px' }}>
+                          {q.tag}
+                        </span>
+                      )}
+                    </div>
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm, remarkMath]}
                       rehypePlugins={[rehypeKatex]}

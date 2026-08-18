@@ -180,6 +180,7 @@ export default function MistakesPage() {
               <div key={m.id} className={styles.card}>
                 <div className={styles.cardHeader}>
                   <div className={styles.tags}>
+                    {q.number && <span className={styles.tag}>第 {q.number} 题</span>}
                     <span className={styles.domainBadge}>{tag}</span>
                     {m.bankName && <span className={styles.tag}>{m.bankName}</span>}
                   </div>
@@ -194,7 +195,7 @@ export default function MistakesPage() {
                     rehypePlugins={[rehypeKatex]}
                     components={{ p: ({ children }) => <span>{children}</span> }}
                   >
-                    {formatCjkMarkdown((q.number ? `${q.number}. ` : "") + q.question)}
+                    {formatCjkMarkdown(q.question)}
                   </ReactMarkdown>
                 </div>
 

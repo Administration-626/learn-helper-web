@@ -92,10 +92,22 @@ export default function QuestionCard({
   return (
     <div className={styles.card}>
       <div className={styles.header}>
-        <span className={styles.progress}>
-          第 {questionIndex + 1} / {totalQuestions} 题
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span className={styles.progress}>
+            第 {questionIndex + 1} / {totalQuestions} 题
+          </span>
+          {question.number && question.number !== (questionIndex + 1) && (
+            <span className={styles.origNumberBadge} title="试卷原题序号">
+              真题第 {question.number} 题
+            </span>
+          )}
+        </div>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          {question.year && (
+            <span className={styles.yearTag}>
+              {question.year}{question.month ? `.${question.month}` : ""}
+            </span>
+          )}
           <span className={styles.tag}>
             {typeLabel}
           </span>
@@ -111,7 +123,7 @@ export default function QuestionCard({
               p: ({ children }) => <span>{children}</span>,
             }}
           >
-            {formatCjkMarkdown((question.number ? `${question.number}. ` : "") + question.question)}
+            {formatCjkMarkdown(question.question)}
           </ReactMarkdown>
         </div>
 
