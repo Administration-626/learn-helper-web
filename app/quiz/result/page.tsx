@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import { useQuizStore } from "@/stores/quiz";
-import { calculateStats, classifyQuestion, isOptionCorrect } from "@/lib/quiz-engine";
+import { calculateStats, classifyQuestion, isOptionCorrect, formatReadableAnswer } from "@/lib/quiz-engine";
 import { getActiveLLMConfig } from "@/lib/db";
 import { SparklesIcon } from "@/components/Icons";
 import ReactMarkdown from "react-markdown";
@@ -247,8 +247,8 @@ ${stats.incorrectQuestions.map((q, idx) => `${idx + 1}. [${q.tag || classifyQues
                     </div>
 
                     <div className={styles.answers}>
-                      <span className={styles.userAnswer}>你的答案: {currentSession.answers[q.id!] || "未作答"}</span>
-                      <span className={styles.correctAnswer}>正确答案: {q.answer}</span>
+                      <span className={styles.userAnswer}>你的答案: {formatReadableAnswer(currentSession.answers[q.id!], q)}</span>
+                      <span className={styles.correctAnswer}>正确答案: {formatReadableAnswer(q.answer, q)}</span>
                     </div>
 
                     {q.explanation && (

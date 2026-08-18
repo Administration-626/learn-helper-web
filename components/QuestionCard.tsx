@@ -11,7 +11,7 @@ import { formatCjkMarkdown } from "@/lib/markdown";
 import ExplanationModal from "./ExplanationModal";
 import { EditIcon } from "./Icons";
 import { updateQuestionExplanation } from "@/lib/db";
-import { isMultiChoiceQuestion, isMultiBlankQuestion, isOptionCorrect, isOptionSelected } from "@/lib/quiz-engine";
+import { isMultiChoiceQuestion, isMultiBlankQuestion, isOptionCorrect, isOptionSelected, formatReadableAnswer } from "@/lib/quiz-engine";
 import { useQuizStore } from "@/stores/quiz";
 
 interface QuestionCardProps {
@@ -145,7 +145,7 @@ export default function QuestionCard({
         <div className={styles.feedback}>
           <div className={styles.feedbackHeader}>
             <h4 className={styles.feedbackTitle}>
-              正确答案: <span style={{ color: "var(--color-success)" }}>{question.answer}</span>
+              正确答案: <span style={{ color: "var(--color-success)" }}>{formatReadableAnswer(question.answer, question)}</span>
             </h4>
             <button
               type="button"

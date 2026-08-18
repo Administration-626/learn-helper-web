@@ -60,6 +60,51 @@ export function formatSelectedOptions(options: string[]): string {
   return [...options].sort().join('');
 }
 
+/** Formats any answer string into a human-readable display label (e.g. "(1) C  (2) D" or "A, B, C") */
+export function formatReadableAnswer(answerStr: string | null | undefined, question?: Question | Partial<Question> | null): string {
+  if (!answerStr) return "未作答";
+  const raw = answerStr.trim();
+  if (!raw) return "未作答";
+
+  const isMultiBlank = isMultiBlankQuestion(question) || /^\(\d+\)/.test(raw) || /\(\d+\)/.test(raw);
+
+  if (isMultiBlank) {
+    const blankMap = new Map<number, string>();
+    
+    // 1. Try extracting "(1)A" or "1A" style pairs (including legacy scrambled strings like "((2)D)1C")
+    const regexWithParen = /(?:\((\d+)\)|(\d+))\s*([A-Za-z0-9])/g;
+    let match: RegExpExecArray | null;
+    let foundPairs = false;
+    while ((match = regexWithParen.exec(raw)) !== null) {
+      foundPairs = true;
+      const group = parseInt(match[1] || match[2], 10);
+      const letter = match[3].toUpperCase();
+      blankMap.set(group, letter);
+    }
+
+    // 2. If raw is just pure letters e.g. "CC" or "ABCD" for a multi-blank question
+    if (!foundPairs) {
+      const cleanLetters = raw.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+      for (let i = 0; i < cleanLetters.length; i++) {
+        blankMap.set(i + 1, cleanLetters[i]);
+      }
+    }
+
+    if (blankMap.size > 0) {
+      const sortedGroups = Array.from(blankMap.keys()).sort((a, b) => a - b);
+      return sortedGroups.map(g => `(${g}) ${blankMap.get(g)}`).join('  ');
+    }
+  }
+
+  // If standard multi-choice with multiple letters: e.g. "ABC" -> "A, B, C"
+  const cleanLetters = raw.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  if (cleanLetters.length > 1 && !isMultiBlank) {
+    return cleanLetters.split('').join(', ');
+  }
+
+  return raw.toUpperCase();
+}
+
 export function isOptionSelected(optKey: string, selectedAnswer: string | null | undefined): boolean {
   const list = parseSelectedOptions(selectedAnswer);
   return list.includes(optKey);

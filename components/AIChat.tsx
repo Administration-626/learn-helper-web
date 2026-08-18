@@ -10,6 +10,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { formatCjkMarkdown } from "@/lib/markdown";
+import { formatReadableAnswer, checkAnswer } from "@/lib/quiz-engine";
 import ExplanationModal from "./ExplanationModal";
 import {
   SparklesIcon,
@@ -360,13 +361,14 @@ ${content}
         ? Object.entries(q.options).map(([k, v]) => `  ${k}. ${v}`).join("\n") 
         : "(无选项)";
 
-      const userAnsInfo = userAnswer ? `- 学生当前选择：${userAnswer} (${userAnswer === q?.answer ? "回答正确" : "回答错误"})\n` : "";
+      const isAnsCorrect = (q?.answer && userAnswer) ? checkAnswer(userAnswer, q.answer, q.type || 'single') : false;
+      const userAnsInfo = userAnswer ? `- 学生当前选择：${formatReadableAnswer(userAnswer, q)} (${isAnsCorrect ? "回答正确" : "回答错误"})\n` : "";
 
       const questionContext = `【当前题目信息】
 - 题干：${q?.question || propQText || "无"}
 - 选项：
 ${optionsText}
-- 正确答案：${q?.answer || "未提供"}
+- 正确答案：${formatReadableAnswer(q?.answer, q)}
 ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
 `;
 

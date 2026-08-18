@@ -12,7 +12,7 @@ import rehypeKatex from "rehype-katex";
 import { formatCjkMarkdown } from "@/lib/markdown";
 import { useQuizStore } from "@/stores/quiz";
 import { SparklesIcon, TrashIcon } from "@/components/Icons";
-import { classifyQuestion, isOptionCorrect, isOptionSelected } from "@/lib/quiz-engine";
+import { classifyQuestion, isOptionCorrect, isOptionSelected, formatReadableAnswer } from "@/lib/quiz-engine";
 
 type MistakeItem = MistakeRecord & { questionData?: Question, bankName?: string };
 
@@ -200,9 +200,9 @@ export default function MistakesPage() {
 
                 <div className={styles.details}>
                   <p style={{ fontSize: '0.9rem', marginBottom: '8px', color: 'var(--color-text-secondary)' }}>
-                    你的回答：<strong style={{ color: 'var(--color-error)' }}>{m.userAnswer}</strong>
+                    你的回答：<strong style={{ color: 'var(--color-error)' }}>{formatReadableAnswer(m.userAnswer, q)}</strong>
                     <span style={{ margin: '0 8px' }}>|</span>
-                    正确答案：<strong style={{ color: 'var(--color-success)' }}>{q.answer}</strong>
+                    正确答案：<strong style={{ color: 'var(--color-success)' }}>{formatReadableAnswer(q.answer, q)}</strong>
                   </p>
                   
                   {isExpanded && (
