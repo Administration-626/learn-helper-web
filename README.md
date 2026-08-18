@@ -11,46 +11,55 @@ LearnHelper Web 采用五层分层架构设计（分层解耦、本地优先、�
 
 ```mermaid
 graph TD
-    subgraph 表现层 [1. 表现与交互层 Presentation Layer]
-        P1[Dashboard / 题库管理]
-        P2[Quiz 刷题器 5大模式]
-        P3[AIChat 响应式分屏面板]
-        P4[错题本与知识薄弱点透视]
-        P5[模考成绩单与答题卡]
+    subgraph Layer1 ["1. 表现与交互层 Presentation Layer"]
+        P1["Dashboard / 题库管理"]
+        P2["Quiz 刷题器 (5大模式)"]
+        P3["AIChat 响应式分屏面板"]
+        P4["错题本与知识薄弱点透视"]
+        P5["模考成绩单与答题卡"]
     end
 
-    subgraph 渲染层 [2. 渲染与排版层 Rendering Engine]
-        R1[KaTeX 数学公式双通道渲染]
-        R2[CJK 标点排版修正器]
-        R3[DeepSeek-R1 思考链流式折叠]
+    subgraph Layer2 ["2. 渲染与排版层 Rendering Engine"]
+        R1["KaTeX 数学公式双通道渲染"]
+        R2["CJK 标点排版修正器"]
+        R3["DeepSeek-R1 思考链流式折叠"]
     end
 
-    subgraph 业务层 [3. 核心业务与算法层 Core Engine]
-        E1[PRNG 种子伪随机乱序算法]
-        E2[复合题型判题与容错引擎]
-        E3[知识领域智能分类与薄弱点聚类]
-        E4[AI Prompt 上下文动态注入器]
+    subgraph Layer3 ["3. 核心业务与算法层 Core Engine"]
+        E1["PRNG 种子伪随机乱序算法"]
+        E2["复合题型判题与容错引擎"]
+        E3["知识领域智能分类与薄弱点聚类"]
+        E4["AI Prompt 上下文动态注入器"]
     end
 
-    subgraph 状态与存储层 [4. 状态与持久化层 Local-First Data Layer]
-        S1[Zustand 会话状态机]
-        D1[(Dexie.js / IndexedDB)]
-        D1 --> T1[banks 题库]
-        D1 --> T2[questions 题目]
-        D1 --> T3[mistakes 错题本]
-        D1 --> T4[llmConfigs 模型配置]
-        D1 --> T5[chatMessages 会话记录]
+    subgraph Layer4 ["4. 状态与持久化层 Local-First Data Layer"]
+        S1["Zustand 会话状态机"]
+        D1[("Dexie.js / IndexedDB")]
+        D1 --> T1["banks 题库"]
+        D1 --> T2["questions 题目"]
+        D1 --> T3["mistakes 错题本"]
+        D1 --> T4["llmConfigs 模型配置"]
+        D1 --> T5["chatMessages 会话记录"]
     end
 
-    subgraph 服务代理层 [5. 服务代理与上游适配 Gateway Layer]
-        G1[/api/chat 安全代理路由]
-        G1 --> SEC[SSRF 防护 & 双向 Abort 信号]
-        G1 --> LLM[OpenAI / DeepSeek / 阿里百炼 / 硅基流动 / 本地 Ollama]
+    subgraph Layer5 ["5. 服务代理与上游适配 Gateway Layer"]
+        G1["/api/chat 安全代理路由"]
+        SEC["SSRF 防护与双向 Abort 信号"]
+        LLM["OpenAI / DeepSeek / 阿里百炼 / 硅基流动 / 本地 Ollama"]
+        G1 --> SEC
+        G1 --> LLM
     end
 
-    P2 & P3 --> R1 & R2 & R3
-    P2 & P3 --> E1 & E2 & E3 & E4
-    E1 & E2 & E3 --> S1
+    P2 --> R1
+    P2 --> R2
+    P3 --> R3
+    P2 --> E1
+    P2 --> E2
+    P2 --> E3
+    P3 --> E4
+    E1 --> S1
+    E2 --> S1
+    E3 --> S1
     S1 <--> D1
     P3 --> G1
 ```
