@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import { useQuizStore } from "@/stores/quiz";
-import { calculateStats, classifyQuestion } from "@/lib/quiz-engine";
+import { calculateStats, classifyQuestion, isOptionCorrect } from "@/lib/quiz-engine";
 import { getActiveLLMConfig } from "@/lib/db";
 import { SparklesIcon } from "@/components/Icons";
 import ReactMarkdown from "react-markdown";
@@ -234,11 +234,16 @@ ${stats.incorrectQuestions.map((q, idx) => `${idx + 1}. [${q.tag || classifyQues
                     <p style={{ fontWeight: 500, marginBottom: "0.75rem" }}>{q.question}</p>
                     
                     <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginBottom: "1rem" }}>
-                      {Object.entries(q.options || {}).map(([key, text]) => (
-                        <div key={key} style={{ color: q.answer.includes(key) ? "var(--color-success)" : "var(--color-text-secondary)" }}>
-                          <strong>{key}.</strong> {text} {q.answer.includes(key) && "✓ (正确答案)"}
-                        </div>
-                      ))}
+                      {Object.entries(q.options || {})
+                        .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
+                        .map(([key, text]) => {
+                          const isCorrect = isOptionCorrect(key, q);
+                          return (
+                            <div key={key} style={{ color: isCorrect ? "var(--color-success)" : "var(--color-text-secondary)" }}>
+                              <strong>{key}.</strong> {text} {isCorrect && "✓ (正确答案)"}
+                            </div>
+                          );
+                        })}
                     </div>
 
                     <div className={styles.answers}>

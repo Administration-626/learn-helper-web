@@ -11,7 +11,7 @@ import { formatCjkMarkdown } from "@/lib/markdown";
 import ExplanationModal from "./ExplanationModal";
 import { EditIcon } from "./Icons";
 import { updateQuestionExplanation } from "@/lib/db";
-import { isMultiChoiceQuestion } from "@/lib/quiz-engine";
+import { isMultiChoiceQuestion, isMultiBlankQuestion, isOptionCorrect, isOptionSelected } from "@/lib/quiz-engine";
 import { useQuizStore } from "@/stores/quiz";
 
 interface QuestionCardProps {
@@ -41,13 +41,19 @@ export default function QuestionCard({
 }: QuestionCardProps) {
   const [showEditModal, setShowEditModal] = useState(false);
 
+  const isMultiBlank = isMultiBlankQuestion(question);
   const isMultiChoice = isMultiChoiceQuestion(question);
   const cleanAns = (question.answer || "").replace(/[^A-Za-z0-9]/g, "");
-  const typeLabel = isMultiChoice
-    ? cleanAns.length > 1
+  
+  let typeLabel = "单选题";
+  if (isMultiBlank) {
+    const blankCount = new Set(Object.keys(question.options || {}).map(k => k.match(/^\(\d+\)/)?.[0]).filter(Boolean)).size || cleanAns.length || 2;
+    typeLabel = `多空题 (${blankCount}空)`;
+  } else if (isMultiChoice) {
+    typeLabel = cleanAns.length > 1
       ? `多选题 (${cleanAns.length}项)`
-      : "多选题"
-    : "单选题";
+      : "多选题";
+  }
 
   const isRecite = mode === "recite";
   const isExam = mode === "exam";
@@ -55,13 +61,13 @@ export default function QuestionCard({
   const getOptionClass = (key: string) => {
     const classes = [styles.option];
     
-    if (selectedAnswer?.includes(key)) {
+    if (isOptionSelected(key, selectedAnswer)) {
       classes.push(styles.selected);
     }
 
     if ((isSubmitted && !isExam) || isRecite) {
-      const isCorrect = question.answer.includes(key);
-      const isSelected = selectedAnswer?.includes(key);
+      const isCorrect = isOptionCorrect(key, question);
+      const isSelected = isOptionSelected(key, selectedAnswer);
 
       if (isCorrect) {
         classes.push(styles.correct);
@@ -79,7 +85,9 @@ export default function QuestionCard({
     onSelectOption(key);
   };
 
-  const optionEntries = Object.entries(question.options || {}).sort(([a], [b]) => a.localeCompare(b));
+  const optionEntries = Object.entries(question.options || {}).sort(([a], [b]) => 
+    a.localeCompare(b, undefined, { numeric: true })
+  );
 
   return (
     <div className={styles.card}>

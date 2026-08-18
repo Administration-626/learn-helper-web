@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import { useQuizStore } from "@/stores/quiz";
 import { db, getQuestions } from "@/lib/db";
-import { generateQuestionOrder, isMultiChoiceQuestion } from "@/lib/quiz-engine";
+import { generateQuestionOrder, isMultiChoiceQuestion, toggleOptionSelection } from "@/lib/quiz-engine";
 import type { QuestionBank, QuizMode } from "@/lib/types";
 import QuestionCard from "@/components/QuestionCard";
 import AIChat, { type AIChatLayout } from "@/components/AIChat";
@@ -207,14 +207,8 @@ export default function QuizPage() {
     if (isSubmitted || currentSession.mode === "recite") return;
     
     if (isMultiChoiceQuestion(currentQuestion)) {
-      let currentArr = localAnswer ? localAnswer.split("") : [];
-      if (currentArr.includes(optId)) {
-        currentArr = currentArr.filter(id => id !== optId);
-      } else {
-        currentArr.push(optId);
-      }
-      currentArr.sort();
-      setLocalAnswer(currentArr.join(""));
+      const nextAns = toggleOptionSelection(localAnswer, optId);
+      setLocalAnswer(nextAns);
     } else {
       // Single choice: immediately submit answer!
       setLocalAnswer("");

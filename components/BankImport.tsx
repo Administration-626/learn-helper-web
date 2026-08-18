@@ -64,9 +64,11 @@ export default function BankImport({ onImportSuccess }: BankImportProps) {
         throw new Error("无效的 JSON 格式，找不到题目数组");
       }
 
-      await db.importBank(bankName.trim(), questions as Question[]);
+      const res = await db.updateOrImportBank(bankName.trim(), questions as Question[]);
 
-      setStatus({ type: "success", msg: `成功导入 ${questions.length} 道题目！` });
+      const actionText = res.isUpdate ? "覆盖更新" : "成功导入";
+      const extraText = res.isUpdate ? "（已保留原错题记录与自定义解析）" : "";
+      setStatus({ type: "success", msg: `🎉 ${actionText} ${res.count} 道题目！${extraText}` });
       setBankName("");
       setFile(null);
       setPreviewCount(null);
@@ -90,8 +92,10 @@ export default function BankImport({ onImportSuccess }: BankImportProps) {
       if (!res.ok) throw new Error(`加载内置题库文件失败 (HTTP ${res.status})`);
       const data = await res.json();
       
-      await db.importBank("系统架构设计师·真题题库", data);
-      setStatus({ type: "success", msg: `🎉 成功载入内置题库《系统架构设计师》，共 ${data.length} 道题目！` });
+      const result = await db.updateOrImportBank("系统架构设计师·真题题库", data);
+      const actionText = result.isUpdate ? "更新" : "载入";
+      const extraText = result.isUpdate ? "（已同步题干新图，保留您的错题与自定义笔记）" : "";
+      setStatus({ type: "success", msg: `🎉 成功${actionText}内置题库《系统架构设计师》，共 ${result.count} 道题目！${extraText}` });
       onImportSuccess?.();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "载入内置题库失败";

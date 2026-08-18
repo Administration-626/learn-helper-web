@@ -24,23 +24,112 @@ export function generateQuestionOrder(total: number, mode: QuizMode, seed?: numb
   return indices;
 }
 
+export function isMultiBlankQuestion(question?: Question | Partial<Question> | null): boolean {
+  if (!question || !question.options) return false;
+  return Object.keys(question.options).some(k => /^\(\d+\)/.test(k));
+}
+
 export function isMultiChoiceQuestion(question?: Question | Partial<Question> | null): boolean {
   if (!question) return false;
   if (question.type === 'multi') return true;
+  if (isMultiBlankQuestion(question)) return true;
   const cleanAns = (question.answer || '').replace(/[^A-Za-z0-9]/g, '');
   return cleanAns.length > 1;
 }
 
-export function checkAnswer(userAnswer: string, correctAnswer: string, type?: 'single' | 'multi'): boolean {
-  const cleanUser = (userAnswer || '').replace(/\s+/g, '').toUpperCase();
-  const cleanCorrect = (correctAnswer || '').replace(/\s+/g, '').toUpperCase();
+/** Parses selected answer string into an array of option keys */
+export function parseSelectedOptions(answerStr: string | null | undefined): string[] {
+  if (!answerStr) return [];
+  const trimmed = answerStr.trim();
+  if (!trimmed) return [];
+  if (trimmed.includes(',') || trimmed.includes(' ') || trimmed.startsWith('(')) {
+    const matches = trimmed.match(/\(\d+\)[A-Za-z0-9]|[A-Za-z0-9]/g);
+    return matches || [];
+  }
+  return trimmed.split('');
+}
 
+/** Formats an array of option keys back into an answer string */
+export function formatSelectedOptions(options: string[]): string {
+  if (!options || options.length === 0) return '';
+  const isMultiBlank = options.some(k => /^\(\d+\)/.test(k));
+  if (isMultiBlank) {
+    const sorted = [...options].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    return sorted.join(',');
+  }
+  return [...options].sort().join('');
+}
+
+export function isOptionSelected(optKey: string, selectedAnswer: string | null | undefined): boolean {
+  const list = parseSelectedOptions(selectedAnswer);
+  return list.includes(optKey);
+}
+
+export function isOptionCorrect(optKey: string, question?: Question | Partial<Question> | null): boolean {
+  if (!question || !question.answer) return false;
+  const cleanCorrect = question.answer.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+
+  const groupMatch = optKey.match(/^\((\d+)\)([A-Za-z0-9])$/);
+  if (groupMatch) {
+    const groupNum = parseInt(groupMatch[1], 10);
+    const letter = groupMatch[2].toUpperCase();
+    const correctLetter = cleanCorrect[groupNum - 1];
+    return letter === correctLetter;
+  }
+
+  return cleanCorrect.includes(optKey.toUpperCase());
+}
+
+export function toggleOptionSelection(currentAnswer: string, optKey: string): string {
+  const currentList = parseSelectedOptions(currentAnswer);
+  const isMultiBlank = /^\((\d+)\)/.test(optKey);
+
+  if (isMultiBlank) {
+    const groupMatch = optKey.match(/^\((\d+)\)/);
+    const groupPrefix = groupMatch ? groupMatch[0] : "";
+    
+    if (currentList.includes(optKey)) {
+      const nextList = currentList.filter(k => k !== optKey);
+      return formatSelectedOptions(nextList);
+    } else {
+      const nextList = currentList.filter(k => !k.startsWith(groupPrefix)).concat(optKey);
+      return formatSelectedOptions(nextList);
+    }
+  } else {
+    if (currentList.includes(optKey)) {
+      const nextList = currentList.filter(k => k !== optKey);
+      return formatSelectedOptions(nextList);
+    } else {
+      const nextList = [...currentList, optKey];
+      return formatSelectedOptions(nextList);
+    }
+  }
+}
+
+export function checkAnswer(userAnswer: string, correctAnswer: string, type?: 'single' | 'multi'): boolean {
+  const cleanCorrect = (correctAnswer || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  const selected = parseSelectedOptions(userAnswer);
+
+  if (selected.some(k => /^\(\d+\)/.test(k))) {
+    const blankMap = new Map<number, string>();
+    for (const item of selected) {
+      const m = item.match(/^\((\d+)\)([A-Za-z0-9])$/);
+      if (m) blankMap.set(parseInt(m[1], 10), m[2].toUpperCase());
+    }
+    const maxGroup = Math.max(...Array.from(blankMap.keys()), cleanCorrect.length);
+    let extracted = "";
+    for (let i = 1; i <= maxGroup; i++) {
+      extracted += blankMap.get(i) || " ";
+    }
+    return extracted.trim() === cleanCorrect;
+  }
+
+  const cleanUser = (userAnswer || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
   const isMulti = type === 'multi' || cleanCorrect.length > 1;
   if (!isMulti) {
     return cleanUser === cleanCorrect;
   }
   
-  // For multi-choice or multi-blank questions, sort letters before comparison
   const sortedUser = cleanUser.split('').sort().join('');
   const sortedCorrect = cleanCorrect.split('').sort().join('');
   return sortedUser === sortedCorrect;

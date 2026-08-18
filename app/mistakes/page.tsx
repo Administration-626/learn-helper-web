@@ -12,7 +12,7 @@ import rehypeKatex from "rehype-katex";
 import { formatCjkMarkdown } from "@/lib/markdown";
 import { useQuizStore } from "@/stores/quiz";
 import { SparklesIcon, TrashIcon } from "@/components/Icons";
-import { classifyQuestion } from "@/lib/quiz-engine";
+import { classifyQuestion, isOptionCorrect, isOptionSelected } from "@/lib/quiz-engine";
 
 type MistakeItem = MistakeRecord & { questionData?: Question, bankName?: string };
 
@@ -208,9 +208,11 @@ export default function MistakesPage() {
                   {isExpanded && (
                     <>
                       <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        {Object.entries(q.options || {}).map(([key, text]) => {
-                          const isCorrect = q.answer.includes(key);
-                          const isUserSelected = m.userAnswer.includes(key);
+                        {Object.entries(q.options || {})
+                          .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
+                          .map(([key, text]) => {
+                          const isCorrect = isOptionCorrect(key, q);
+                          const isUserSelected = isOptionSelected(key, m.userAnswer);
                           let optionClass = styles.option;
                           if (isCorrect) optionClass += ` ${styles.optionCorrect}`;
                           else if (isUserSelected) optionClass += ` ${styles.optionWrong}`;

@@ -8,6 +8,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { formatCjkMarkdown } from "@/lib/markdown";
+import { isOptionCorrect } from "@/lib/quiz-engine";
 
 export default function BankDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -178,8 +179,10 @@ export default function BankDetailPage({ params }: { params: Promise<{ id: strin
                 
                 {expanded[q.id!] && (
                   <div className={styles.options}>
-                    {Object.entries(q.options || {}).map(([k, v]) => (
-                      <div key={k} className={`${styles.option} ${q.answer.includes(k) ? styles.correctOption : ""}`}>
+                    {Object.entries(q.options || {})
+                      .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
+                      .map(([k, v]) => (
+                        <div key={k} className={`${styles.option} ${isOptionCorrect(k, q) ? styles.correctOption : ""}`}>
                         <strong>{k}.</strong>{" "}
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm, remarkMath]}

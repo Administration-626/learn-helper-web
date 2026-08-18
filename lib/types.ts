@@ -1,9 +1,10 @@
-// Question from JSON import
 export interface Question {
   id?: number; // auto-increment in IndexedDB
   bankId?: number; // which bank this belongs to
-  tag?: string;
+  year?: string | number;
+  month?: string | number;
   number?: number;
+  tag?: string;
   question: string;
   options: Record<string, string>; // {"A": "...", "B": "..."}
   answer: string; // "B" or "BC"

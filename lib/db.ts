@@ -23,30 +23,101 @@ export class LearnHelperDatabase extends Dexie {
 
 export const db = new LearnHelperDatabase();
 
-export async function importBank(name: string, questions: Question[]) {
-  const validQuestions = questions.filter(q => q && q.question?.trim());
-  return await db.transaction('rw', db.banks, db.questions, async () => {
-    const bankId = await db.banks.add({
-      name,
-      createdAt: Date.now(),
-      questionCount: validQuestions.length
-    });
+export function getQuestionKey(q: Partial<Question>): string {
+  if (q.year && q.month && q.number) {
+    return `${q.year}-${q.month}-${q.number}`;
+  }
+  return (q.question || '').slice(0, 80).trim();
+}
 
-    const questionsWithBankId = validQuestions.map(q => {
+export async function importBank(name: string, questions: Question[]) {
+  const res = await updateOrImportBank(name, questions);
+  return res.bankId;
+}
+
+export async function updateOrImportBank(name: string, questions: Question[], targetBankId?: number) {
+  const validQuestions = questions.filter(q => q && q.question?.trim());
+  return await db.transaction('rw', db.banks, db.questions, db.mistakes, async () => {
+    let existingBank: QuestionBank | undefined;
+    if (targetBankId !== undefined) {
+      existingBank = await db.banks.get(targetBankId);
+    } else {
+      existingBank = await db.banks.where('name').equals(name).first();
+    }
+
+    if (!existingBank) {
+      const bankId = await db.banks.add({
+        name,
+        createdAt: Date.now(),
+        questionCount: validQuestions.length
+      });
+
+      const questionsWithBankId = validQuestions.map(q => {
+        const cleanAns = (q.answer || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+        const isMulti = q.type === 'multi' || cleanAns.length > 1;
+        const tag = q.tag && q.tag.trim() ? q.tag.trim() : classifyQuestion(q);
+        return {
+          ...q,
+          bankId,
+          tag,
+          answer: cleanAns,
+          type: (isMulti ? 'multi' : 'single') as 'single' | 'multi'
+        };
+      });
+
+      await db.questions.bulkAdd(questionsWithBankId);
+      return { bankId, isUpdate: false, count: validQuestions.length };
+    }
+
+    const bankId = existingBank.id!;
+    const oldQuestions = await db.questions.where('bankId').equals(bankId).toArray();
+    const oldMap = new Map<string, Question>();
+    for (const oq of oldQuestions) {
+      oldMap.set(getQuestionKey(oq), oq);
+    }
+
+    const toPut: Question[] = [];
+    const toAdd: Question[] = [];
+
+    for (const q of validQuestions) {
       const cleanAns = (q.answer || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
       const isMulti = q.type === 'multi' || cleanAns.length > 1;
       const tag = q.tag && q.tag.trim() ? q.tag.trim() : classifyQuestion(q);
-      return {
-        ...q,
-        bankId,
-        tag,
-        answer: cleanAns,
-        type: (isMulti ? 'multi' : 'single') as 'single' | 'multi'
-      };
-    });
+      const key = getQuestionKey(q);
+      const oldQ = oldMap.get(key);
 
-    await db.questions.bulkAdd(questionsWithBankId);
-    return bankId;
+      if (oldQ && oldQ.id) {
+        toPut.push({
+          ...q,
+          id: oldQ.id,
+          bankId,
+          tag,
+          answer: cleanAns,
+          type: (isMulti ? 'multi' : 'single') as 'single' | 'multi',
+          explanation: oldQ.explanation || q.explanation || '',
+        });
+      } else {
+        toAdd.push({
+          ...q,
+          bankId,
+          tag,
+          answer: cleanAns,
+          type: (isMulti ? 'multi' : 'single') as 'single' | 'multi',
+        });
+      }
+    }
+
+    if (toPut.length > 0) {
+      await db.questions.bulkPut(toPut);
+    }
+    if (toAdd.length > 0) {
+      await db.questions.bulkAdd(toAdd);
+    }
+
+    const totalCount = toPut.length + toAdd.length;
+    await db.banks.update(bankId, { questionCount: totalCount });
+
+    return { bankId, isUpdate: true, count: totalCount };
   });
 }
 
