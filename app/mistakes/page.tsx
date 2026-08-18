@@ -11,7 +11,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { formatCjkMarkdown } from "@/lib/markdown";
 import { useQuizStore } from "@/stores/quiz";
-import { SparklesIcon, TrashIcon, ChartBarIcon } from "@/components/Icons";
+import { SparklesIcon, TrashIcon, ChartBarIcon, AlertCircleIcon } from "@/components/Icons";
 import { classifyQuestion, isOptionCorrect, isOptionSelected, formatReadableAnswer } from "@/lib/quiz-engine";
 
 type MistakeItem = MistakeRecord & { questionData?: Question, bankName?: string };
@@ -147,7 +147,11 @@ export default function MistakesPage() {
               >
                 <span>{domain}</span>
                 <span className={styles.domainCount}>{count}</span>
-                {idx === 0 && count >= 2 && <span title="错题集中领域">⚠️</span>}
+                {idx === 0 && count >= 2 && (
+                  <span title="错题集中领域" style={{ display: 'inline-flex', alignItems: 'center', color: '#d97706' }}>
+                    <AlertCircleIcon size={12} />
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -156,7 +160,7 @@ export default function MistakesPage() {
 
       {mistakes.length === 0 ? (
         <div className={styles.empty}>
-          <h2>暂无错题记录 🎉</h2>
+          <h2>暂无错题记录</h2>
           <p>继续保持好成绩！</p>
         </div>
       ) : filteredMistakes.length === 0 ? (

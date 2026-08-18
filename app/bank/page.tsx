@@ -24,7 +24,7 @@ export default function BankManagementPage() {
   const handleDelete = async (id: number, name: string) => {
     const mistakeCount = await db.mistakes.where('bankId').equals(id).count();
     const warnMsg = mistakeCount > 0
-      ? `确定要删除题库 "${name}" 吗？\n⚠️ 该题库关联了 ${mistakeCount} 条错题记录，删除将一并彻底清空且不可恢复！\n建议先点击「导出」备份后再操作。`
+      ? `确定要删除题库 "${name}" 吗？\n注意：该题库关联了 ${mistakeCount} 条错题记录，删除将一并彻底清空且不可恢复！\n建议先点击「导出」备份后再操作。`
       : `确定要删除题库 "${name}" 吗？此操作不可逆。`;
     if (window.confirm(warnMsg)) {
       await deleteBank(id);

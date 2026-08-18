@@ -6,7 +6,7 @@ import styles from "./page.module.css";
 import { useQuizStore } from "@/stores/quiz";
 import { calculateStats, classifyQuestion, isOptionCorrect, formatReadableAnswer } from "@/lib/quiz-engine";
 import { getActiveLLMConfig } from "@/lib/db";
-import { SparklesIcon } from "@/components/Icons";
+import { SparklesIcon, ChartBarIcon } from "@/components/Icons";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -69,11 +69,6 @@ export default function QuizResultPage() {
     
     try {
       const activeConfig = await getActiveLLMConfig();
-      if (!activeConfig) {
-        setAiAnalysis("⚠️ 请先在【设置】页面配置大模型 API Key 后再使用 AI 智能分析功能。");
-        setIsAnalyzing(false);
-        return;
-      }
 
       const customPrompt = typeof window !== "undefined" ? localStorage.getItem("analysisPrompt") : null;
       const systemPrompt = customPrompt || "你是一个专业的考试辅导专家，请根据用户的刷题成绩，分析薄弱知识点、错误原因并给出学习建议。";
@@ -170,7 +165,10 @@ ${stats.incorrectQuestions.map((q, idx) => `${idx + 1}. [${q.tag || classifyQues
 
         {domainSummary.length > 0 && (
           <div style={{ marginTop: '1rem', padding: '0.75rem 1rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem' }}>
-            <span style={{ fontWeight: 600, color: 'var(--color-primary)', marginRight: '8px' }}>📊 薄弱考点分布:</span>
+            <span style={{ fontWeight: 600, color: 'var(--color-primary)', marginRight: '8px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <ChartBarIcon size={14} />
+              <span>薄弱考点分布:</span>
+            </span>
             {domainSummary.map(([d, c], i) => (
               <span key={d} style={{ marginRight: '10px', color: 'var(--color-text-secondary)' }}>
                 {d} <strong style={{ color: 'var(--color-error)' }}>({c}题)</strong>{i < domainSummary.length - 1 ? '、' : ''}
@@ -240,7 +238,7 @@ ${stats.incorrectQuestions.map((q, idx) => `${idx + 1}. [${q.tag || classifyQues
                           const isCorrect = isOptionCorrect(key, q);
                           return (
                             <div key={key} style={{ color: isCorrect ? "var(--color-success)" : "var(--color-text-secondary)" }}>
-                              <strong>{key}.</strong> {text} {isCorrect && "✓ (正确答案)"}
+                              <strong>{key}.</strong> {text} {isCorrect && "(正确答案)"}
                             </div>
                           );
                         })}

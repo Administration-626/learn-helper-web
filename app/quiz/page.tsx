@@ -9,7 +9,7 @@ import { generateQuestionOrder, isMultiChoiceQuestion, toggleOptionSelection, ch
 import type { QuestionBank, QuizMode } from "@/lib/types";
 import QuestionCard from "@/components/QuestionCard";
 import AIChat, { type AIChatLayout } from "@/components/AIChat";
-import { SparklesIcon } from "@/components/Icons";
+import { SparklesIcon, BookOpenIcon } from "@/components/Icons";
 
 export default function QuizPage() {
   const router = useRouter();
@@ -101,7 +101,9 @@ export default function QuizPage() {
     return (
       <div className={styles.container}>
         <div className={styles.setupCard} style={{ textAlign: "center", padding: "3rem 2rem" }}>
-          <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>📚</div>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: "1rem", color: "var(--color-primary)" }}>
+            <BookOpenIcon size={48} />
+          </div>
           <h1 className={styles.title} style={{ marginBottom: "0.5rem" }}>暂无可用题库</h1>
           <p style={{ color: "var(--color-text-secondary)", marginBottom: "1.5rem" }}>
             请先导入题库或载入内置真题题库开始刷题。

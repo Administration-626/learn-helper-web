@@ -26,6 +26,9 @@ import {
   StopIcon,
   BrainIcon,
   SendIcon,
+  AlertCircleIcon,
+  XCircleIcon,
+  ClockIcon,
 } from "./Icons";
 
 interface Message {
@@ -478,7 +481,7 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
           {
             id: createMessageId(),
             role: "assistant",
-            content: "⚠️ 大模型未返回任何有效文本内容。请检查【设置】中的模型名称（Model）配置是否正确，或尝试重新提问。",
+            content: "大模型未返回任何有效文本内容。请检查【设置】中的模型名称（Model）配置是否正确，或尝试重新提问。",
           },
         ]);
       } else if (assistantText) {
@@ -497,7 +500,7 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
           {
             id: createMessageId(),
             role: "assistant",
-            content: "⏱️ 请求已终止（超时或手动停止）。如网络正常，请检查【设置】中的 API 地址、Key 和模型名是否正确。",
+            content: "请求已终止（超时或手动停止）。如网络正常，请检查【设置】中的 API 地址、Key 和模型名是否正确。",
           },
         ]);
         return;
@@ -509,7 +512,7 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
         {
           id: createMessageId(),
           role: "assistant",
-          content: `❌ 请求出错: ${msg}`,
+          content: `请求出错: ${msg}`,
         },
       ]);
     } finally {
@@ -604,16 +607,56 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
                       <div className={styles.reasoningContent}>{msg.reasoning}</div>
                     </details>
                   )}
-                  {msg.content && (
-                    <div className={styles.markdownBody} style={{ wordBreak: "break-word" }}>
-                      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
-                        {formatCjkMarkdown(msg.content)}
-                      </ReactMarkdown>
-                    </div>
-                  )}
+                  {msg.content && (() => {
+                    const isError = msg.content.startsWith("请求出错");
+                    const isTimeout = msg.content.startsWith("请求已终止");
+                    const isWarning = msg.content.startsWith("大模型未返回");
+
+                    if (isError) {
+                      return (
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', color: 'var(--color-error)' }}>
+                          <XCircleIcon size={18} style={{ flexShrink: 0, marginTop: '3px' }} />
+                          <div className={styles.markdownBody} style={{ wordBreak: "break-word", color: 'inherit' }}>
+                            {formatCjkMarkdown(msg.content)}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (isTimeout) {
+                      return (
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', color: '#d97706' }}>
+                          <ClockIcon size={18} style={{ flexShrink: 0, marginTop: '3px' }} />
+                          <div className={styles.markdownBody} style={{ wordBreak: "break-word", color: 'inherit' }}>
+                            {formatCjkMarkdown(msg.content)}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (isWarning) {
+                      return (
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', color: '#d97706' }}>
+                          <AlertCircleIcon size={18} style={{ flexShrink: 0, marginTop: '3px' }} />
+                          <div className={styles.markdownBody} style={{ wordBreak: "break-word", color: 'inherit' }}>
+                            {formatCjkMarkdown(msg.content)}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className={styles.markdownBody} style={{ wordBreak: "break-word" }}>
+                        <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+                          {formatCjkMarkdown(msg.content)}
+                        </ReactMarkdown>
+                      </div>
+                    );
+                  })()}
                   {msg.isTruncated && (
-                    <div style={{ fontSize: '0.8rem', color: '#d97706', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      ⚠️ 该回答已达单次最大 Token 上限，点击下方【继续输出】可无缝续写剩余内容
+                    <div style={{ fontSize: '0.8rem', color: '#d97706', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <AlertCircleIcon size={14} style={{ flexShrink: 0 }} />
+                      <span>该回答已达单次最大 Token 上限，点击下方【继续输出】可无缝续写剩余内容</span>
                     </div>
                   )}
                   {msg.role === "assistant" && msg.id !== "init" && msg.content && (() => {

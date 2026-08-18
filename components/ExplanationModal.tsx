@@ -8,7 +8,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { formatCjkMarkdown } from "@/lib/markdown";
-import { RefreshIcon, TrashIcon, CloseIcon } from "./Icons";
+import { RefreshIcon, TrashIcon, CloseIcon, PencilIcon } from "./Icons";
 
 interface ExplanationModalProps {
   isOpen: boolean;
@@ -75,7 +75,10 @@ export default function ExplanationModal({
       <div className={styles.modal}>
         <div className={styles.header}>
           <div className={styles.titleGroup}>
-            <h3 className={styles.title}>✏️ 自定义本题解析</h3>
+            <h3 className={styles.title} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <PencilIcon size={16} />
+              <span>自定义本题解析</span>
+            </h3>
             <span style={{ fontSize: "0.85rem", color: "var(--color-text-secondary)" }}>
               {question.number ? `第 ${question.number} 题` : `ID: ${question.id}`}
             </span>
@@ -169,7 +172,7 @@ export default function ExplanationModal({
             取消
           </button>
           <button type="button" className={styles.saveBtn} onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "正在保存..." : "💾 保存解析"}
+            {isSaving ? "正在保存..." : "保存解析"}
           </button>
         </div>
       </div>
