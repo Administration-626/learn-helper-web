@@ -4,6 +4,8 @@ import "./globals.css";
 import "katex/dist/katex.min.css";
 import styles from "./layout.module.css";
 
+import { HomeIcon, PencilIcon, BookOpenIcon, LibraryIcon, SettingsIcon } from "@/components/Icons";
+
 export const metadata: Metadata = {
   title: "刷题助手 | LearnHelper",
   description: "A clean and focused study application",
@@ -25,11 +27,26 @@ export default function RootLayout({
               </Link>
             </div>
             <nav className={styles.nav}>
-              <Link href="/" className={styles.navLink}>首页</Link>
-              <Link href="/quiz" className={styles.navLink}>刷题</Link>
-              <Link href="/mistakes" className={styles.navLink}>错题本</Link>
-              <Link href="/bank" className={styles.navLink}>题库管理</Link>
-              <Link href="/settings" className={styles.navLink}>设置</Link>
+              <Link href="/" className={styles.navLink}>
+                <HomeIcon size={18} />
+                <span>首页</span>
+              </Link>
+              <Link href="/quiz" className={styles.navLink}>
+                <PencilIcon size={18} />
+                <span>刷题</span>
+              </Link>
+              <Link href="/mistakes" className={styles.navLink}>
+                <BookOpenIcon size={18} />
+                <span>错题本</span>
+              </Link>
+              <Link href="/bank" className={styles.navLink}>
+                <LibraryIcon size={18} />
+                <span>题库管理</span>
+              </Link>
+              <Link href="/settings" className={styles.navLink}>
+                <SettingsIcon size={18} />
+                <span>设置</span>
+              </Link>
             </nav>
           </aside>
           <main className={styles.content}>

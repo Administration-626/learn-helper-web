@@ -286,3 +286,33 @@ export function classifyQuestion(q: Question | Partial<Question>): string {
 
   return '综合基础与前沿';
 }
+
+/**
+ * 考点掌握度加权算法（借鉴 DeepTutor 掌握度模型）
+ * 越近的做题记录权重越高，结合置信度封顶，返回 0~1 的掌握度得分
+ */
+export function computeMastery(correctness: boolean[]): number {
+  if (!correctness.length) return 0;
+  const weights = [0.5, 0.7, 0.85, 0.95, 1.0].slice(-correctness.length);
+  const recent = correctness.slice(-weights.length);
+  const score = recent.reduce((sum, c, i) => sum + (c ? weights[i] : 0), 0) / weights.reduce((a, b) => a + b, 0);
+  const cap = correctness.length === 1 ? 0.5 : correctness.length === 2 ? 0.8 : 1.0;
+  return Math.min(score, cap);
+}
+
+/**
+ * 艾宾浩斯间隔复习计算器（借鉴 DeepTutor Spaced Repetition）
+ * 计算下一次复习时间戳与间隔阶梯
+ */
+const SRS_INTERVAL_DAYS = [1, 2, 4, 7, 15, 30];
+export function computeNextReview(intervalIndex: number, isCorrect: boolean): { nextIntervalIndex: number; nextReviewAt: number } {
+  let nextIndex = intervalIndex;
+  if (isCorrect) {
+    nextIndex = Math.min(intervalIndex + 1, SRS_INTERVAL_DAYS.length - 1);
+  } else {
+    nextIndex = Math.max(0, intervalIndex - 1);
+  }
+  const days = SRS_INTERVAL_DAYS[nextIndex];
+  const nextReviewAt = Date.now() + days * 86400 * 1000;
+  return { nextIntervalIndex: nextIndex, nextReviewAt };
+}

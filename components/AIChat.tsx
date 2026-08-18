@@ -46,23 +46,31 @@ interface AIChatProps {
   layout?: AIChatLayout;
   onLayoutChange?: (layout: AIChatLayout) => void;
   onClose: () => void;
+  /** 非空时自动发送该提示词（用于答错自动分析） */
+  autoTriggerText?: string;
+  /** autoTriggerText 被消费后的回调 */
+  onAutoTriggerSent?: () => void;
 }
 
 export const DEFAULT_QA_SYSTEM_PROMPT = `你是一名国家软考（系统架构设计师/软件设计师）辅导名师。回答请严谨、精炼、直击考点。
 
 【解题与考点解析规范】：
 1. 严禁编造生拼硬凑、不知所云的打油诗或首字谐音口诀。
-2. 解题技巧必须按以下 3 个维度结构化输出：
-   - 🎯【题眼识别与秒杀词】：提取题干中最具辨识度的特征词（例如：“心跳检测/故障恢复” → 对应“可用性”；“修改缺陷难易度” → 对应“可维护性”；“用户数剧增维持质量” → 对应“可伸缩性”）。
-   - ⚖️【核心差异对比表】：针对本题容易混淆的概念，用简洁 Markdown 表格对比它们的「关注核心」、「考查场景」与「典型策略」。
-   - 🚫【避坑与排除法】：指出出题人常见的设坑套路（如偷换概念、绝对化用词、因果倒置）。
-3. 如果学生答错了，请重点剖析错因与易混考点。
-4. 【排版规范】：涉及带引号或书名号的名词加粗时，请将标点置于加粗符号外（如“**左右法**”或《**教程**》），避免标点紧贴星号导致 Markdown 解析失败。`;
+2. 解题技巧按以下维度结构化输出：
+   - 【题眼识别与秒杀词】：提取题干中最具辨识度的特征词。
+   - 【核心差异对比表】：针对容易混淆的概念，用简洁 Markdown 表格对比「关注核心」、「考查场景」与「典型策略」。
+   - 【避坑与排除法】：指出出题人常见的设坑套路（如偷换概念、绝对化用词、因果倒置）。
+3. 【错题四维归因（学生答错或要求错因分析时必含）】：
+   - 明确归类错因：[概念混淆] / [审题偏差/陷阱] / [计算应用失误] / [知识盲区]，并给出针对性提分动作。
+4. 【费曼交互引导（学生要求费曼自测时）】：
+   - 用生活化比喻引导，提出 1~2 个关键提问检验学生是否真正掌握核心逻辑，指出理解偏差。
+5. 【排版规范】：涉及带引号或书名号的名词加粗时，请将标点置于加粗符号外（如“**左右法**”或《**教程**》）。`;
 
 const QUICK_PROMPTS = [
   "为什么选这个答案？",
   "逐个选项分析对错",
-  "核心考点深度剖析",
+  "错因四维归因诊断",
+  "费曼技巧自测检验",
   "题眼秒杀与避坑技巧"
 ];
 
@@ -79,7 +87,9 @@ export default function AIChat({
   userAnswer, 
   layout = "split",
   onLayoutChange,
-  onClose 
+  onClose,
+  autoTriggerText,
+  onAutoTriggerSent,
 }: AIChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -149,7 +159,7 @@ export default function AIChat({
             {
               id: "init",
               role: "assistant",
-              content: `你好！我是你的 AI 辅导助手 ✨\n\n针对当前题目：**"${qTitle}"**，请随时向我提问，或点击下方快捷提问按钮。`,
+              content: `你好！我是你的 AI 辅导名师助手。\n\n针对当前题目：**"${qTitle}"**，请随时向我提问，或点击下方快捷提问按钮。`,
             },
           ]);
         }
@@ -179,7 +189,6 @@ export default function AIChat({
     setShowScrollBottomBtn(false);
   };
 
-  // Handle ESC key to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -200,7 +209,7 @@ export default function AIChat({
         {
           id: "init",
           role: "assistant",
-          content: `🧹 已清空对话记录。\n\n针对题目：**"${qTitle}"**，有什么想问的随时告诉我！`,
+          content: `已清空对话记录。\n\n针对题目：**"${qTitle}"**，有什么想问的随时告诉我！`,
         },
       ]);
     }
@@ -398,8 +407,8 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      // 前端 60 秒超时，避免请求无限挂起
-      frontendTimeoutId = setTimeout(() => controller.abort(), 60000);
+      // 前端 90 秒超时，避免请求无限挂起
+      frontendTimeoutId = setTimeout(() => controller.abort(), 90000);
 
       const response = await fetch("/api/chat", {
           method: "POST",
@@ -523,6 +532,16 @@ ${userAnsInfo}- 官方解析：${q?.explanation || "无"}
       abortControllerRef.current = null;
     }
   }, [activeQuestion, isLoading, messages, propQText, propQuestion, resolvedQId, userAnswer]);
+
+  // Auto-trigger: 当外部传入 autoTriggerText 时自动发送
+  const autoTriggeredRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (autoTriggerText && autoTriggerText !== autoTriggeredRef.current && !isLoading) {
+      autoTriggeredRef.current = autoTriggerText;
+      handleSendPrompt(autoTriggerText);
+      onAutoTriggerSent?.();
+    }
+  }, [autoTriggerText, handleSendPrompt, isLoading, onAutoTriggerSent]);
 
   const contentPanel = (
     <div className={`${styles.panel} ${layout === "split" ? styles.panelInline : layout === "bottom" ? styles.panelBottom : ""}`}>

@@ -33,6 +33,9 @@
 }
 
 .navLink {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
   color: var(--color-text-secondary);
   font-weight: 500;
   padding: var(--space-xs) var(--space-sm);

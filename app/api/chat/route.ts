@@ -70,7 +70,10 @@ export async function POST(req: NextRequest) {
     };
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
+
+    // 客户端断开连接时（用户停止/离开页面），也中止上游请求
+    req.signal.addEventListener('abort', () => controller.abort(), { once: true });
 
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -97,6 +100,9 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error: unknown) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return new Response('上游 LLM 服务响应超时（90 秒），请检查 API 地址和模型是否可用，或稍后重试。', { status: 504 });
+    }
     const message = error instanceof Error ? error.message : 'Unknown server error';
     return new Response(`Server error: ${message}`, { status: 500 });
   }

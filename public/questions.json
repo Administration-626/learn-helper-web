@@ -918,7 +918,7 @@
     "year": "2017",
     "month": "11",
     "number": 6,
-    "question": "前趋图 (Precedence Graph) 是一个有向无环图，记为：$\\rightarrow = \\{ (P_i, P_j) \\mid P_i \\text{ must complete before } P_j \\text{ may start} \\}$。假设系统中进程 $P = \\{P_1, P_2, P_3, P_4, P_5, P_6, P_7, P_8\\}$，且进程的前趋图如下：\n\n【图片描述：一个有向无环图，包含 8 个节点，分别标记为 P1 到 P8。图中箭头表示依赖关系：\n- P1 指向 P2、P3、P4；\n- P2 指向 P5；\n- P3 指向 P5；\n- P4 指向 P6；\n- P5 指向 P7；\n- P6 指向 P7；\n- P7 指向 P8。\n所有节点均为圆形，内部标注对应进程编号，箭头为单向实线箭头，从左至右大致呈分层结构排列。】\n\n那么前趋图可记为：（ ）。",
+    "question": "前趋图 (Precedence Graph) 是一个有向无环图，记为：$\\rightarrow = \\{ (P_i, P_j) \\mid P_i \\text{ must complete before } P_j \\text{ may start} \\}$。假设系统中进程 $P = \\{P_1, P_2, P_3, P_4, P_5, P_6, P_7, P_8\\}$，且进程的前趋图如下：\n\n```\n       ┌──► (P2) ──► (P5) ──┐\n       │               ▲    │\n(P1) ──┼──► (P3) ──────┘    ▼\n       │                  (P7) ──► (P8)\n       │                    ▲\n       └──► (P4) ──► (P6) ──┘\n```\n\n那么前趋图可记为：（ ）。",
     "options": {
       "A": "$\\rightarrow = \\{ (P_2, P_1), (P_3, P_1), (P_4, P_1), (P_6, P_4), (P_7, P_5), (P_7, P_6), (P_8, P_7) \\}$",
       "B": "$\\rightarrow = \\{ (P_1, P_2), (P_1, P_3), (P_1, P_4), (P_2, P_5), (P_5, P_7), (P_6, P_7), (P_7, P_8) \\}$",
@@ -2534,7 +2534,7 @@
     "year": "2019",
     "month": "11",
     "number": 1,
-    "question": "前趋图 (Precedence Graph) 是一个有向无环图，记为：$\\rightarrow = \\{(P_i, P_j) \\mid P_i \\text{ must complete before } P_j \\text{ may start}\\}$。假设系统中进程 $P=\\{P_1, P_2, P_3, P_4, P_5, P_6, P_7, P_8\\}$，且进程的前趋图如下：\n\n那么，该前驱图可记为（1）",
+    "question": "前趋图 (Precedence Graph) 是一个有向无环图，记为：$\\rightarrow = \\{(P_i, P_j) \\mid P_i \\text{ must complete before } P_j \\text{ may start}\\}$。假设系统中进程 $P=\\{P_1, P_2, P_3, P_4, P_5, P_6, P_7, P_8\\}$，且进程的前趋图如下：\n\n```\n       ┌──► (P2) ──────────► (P5)\n       │      │                │\n       │      ▼                ▼\n(P1) ──┼──► (P3) ──────────► (P6) ───┬──► (P8)\n       │      │                │      ▲\n       │      ▼                ▼      │\n       └──► (P4) ──────────► (P7) ────┘\n```\n\n那么，该前驱图可记为（ ）。",
     "options": {
       "A": "$\\rightarrow = \\{(P_1, P_2), (P_1, P_3), (P_1, P_4), (P_2, P_5), (P_3, P_5), (P_4, P_7), (P_5, P_6), (P_6, P_7), (P_6, P_8), (P_7, P_8)\\}$",
       "B": "$\\rightarrow = \\{(P_1, P_2), (P_3, P_1), (P_4, P_1), (P_5, P_2), (P_5, P_3), (P_6, P_4), (P_7, P_5), (P_7, P_6), (P_6, P_8), (P_8, P_7)\\}$",
@@ -3338,7 +3338,7 @@
     "year": "2020",
     "month": "11",
     "number": 1,
-    "question": "试题 (1) 前趋图 (Precedence Graph) 是一个有向无环图，记为：$\\rightarrow=\\{(Pi, Pj) \\mid Pj\\text{ must complete before }Pj\\text{ may start}\\}$ 。假设系统中进程 $P=\\{P1, P2, P3, P4, P5, P6, P7\\}$，且进程的前趋图如下：那么，该前驱图可记为 (1)。",
+    "question": "前趋图 (Precedence Graph) 是一个有向无环图，记为：$\\rightarrow=\\{(P_i, P_j) \\mid P_i \\text{ must complete before } P_j \\text{ may start}\\}$。假设系统中进程 $P=\\{P_1, P_2, P_3, P_4, P_5, P_6, P_7\\}$，且进程的前趋图如下：\n\n```\n       ┌──► (P2) ────┬──► (P5) ───┬──► (P7)\n       │      │      ▲      │     ▲\n       │      ▼      │      ▼     │\n(P1) ──┼──► (P3) ────┤    (P6) ───┘\n       │      │      │\n       │      ▼      │\n       └──► (P4) ────┘\n```\n\n那么，该前驱图可记为（ ）。",
     "options": {
       "A": "$\\rightarrow=\\{(P_1, P_2), (P_3, P_1), (P_4, P_1), (P_5, P_2), (P_5, P_3), (P_6, P_4), (P_7, P_5), (P_7, P_6), (P_5, P_6), (P_4, P_5), (P_6, P_7)\\}$",
       "B": "$\\rightarrow=\\{(P_1, P_2), (P_1, P_3), (P_1, P_4), (P_2, P_5), (P_2, P_3), (P_3, P_4), (P_3, P_5), (P_4, P_5), (P_5, P_6), (P_5, P_7), (P_6, P_7)\\}$",
@@ -4348,7 +4348,7 @@
     "year": "2021",
     "month": "11",
     "number": 1,
-    "question": "前趋图 (Precedence Graph) 是一个有向无环图，记为：$\\rightarrow = \\{ (P_i, P_j) \\mid P_i \\text{ must complete before } P_j \\text{ may start} \\}$，假设系统中进程 $P=\\{P_1, P_2, P_3, P_4, P_5, P_6, P_7, P_8\\}$，且进程的前趋图如下：",
+    "question": "前趋图 (Precedence Graph) 是一个有向无环图，记为：$\\rightarrow = \\{ (P_i, P_j) \\mid P_i \\text{ must complete before } P_j \\text{ may start} \\}$。假设系统中进程 $P=\\{P_1, P_2, P_3, P_4, P_5, P_6, P_7, P_8\\}$，且进程的前趋图如下：\n\n```\n       ┌──► (P2) ────┬──► (P5) ───┬──► (P7) ──┐\n       │      │      ▲     │      │           │\n       │      ▼      │     ▼      ▼           ▼\n(P1) ──┴──► (P3) ────┤   (P6) ───► (P8) ◄─────┘\n              │      │     ▲\n              ▼      │     │\n            (P4) ────┴─────┘\n```\n\n那么，该前驱图可记为（ ）。",
     "options": {
       "A": "$\\rightarrow = \\{ (P1, P2), (P3, P1), (P4, P1), (P5, P2), (P5, P3), (P6, P4), (P7, P5), (P7, P6), (P5, P6), (P4, P5), (P6, P7), (P7, P6) \\}$",
       "B": "$\\rightarrow = \\{ (P1, P2), (P1, P3), (P2, P5), (P2, P3), (P3, P4), (P3, P5), (P4, P5), (P5, P6), (P5, P7), (P8, P5), (P6, P7), (P7, P8) \\}$",
@@ -5353,7 +5353,7 @@
     "year": "2022",
     "month": "11",
     "number": 2,
-    "question": "前趋图（Precedence Graph）是一个有向无环图，记为：$\\rightarrow = \\{(Pi, Pj) \\mid Pi \\text{ must complete before } Pj \\text{ may start}\\}$，假设系统中进程 $P = \\{P1, P2, P3, P4, P5, P6, P7, P8\\}$，且进程的前趋图如下图所示。那么，该前驱图可记为（ ）。",
+    "question": "前趋图（Precedence Graph）是一个有向无环图，记为：$\\rightarrow = \\{(P_i, P_j) \\mid P_i \\text{ must complete before } P_j \\text{ may start}\\}$，假设系统中进程 $P = \\{P_1, P_2, P_3, P_4, P_5, P_6, P_7, P_8\\}$，且进程的前趋图如下图所示：\n\n```\n       ┌──► (P2) ────┬──► (P5) ───────────────┐\n       │      │      │      │                 │\n       │      ▼      │      ▼                 ▼\n(P1) ──┼──► (P3) ────┴──► (P6) ───┬──► (P7) ──► (P8)\n       │      │                   │      ▲\n       │      ▼                   │      │\n       └──► (P4) ─────────────────┴──────┘\n```\n\n那么，该前驱图可记为（ ）。",
     "options": {
       "A": "→={P1, P2}，(P1, P3)，(P1, P4)，(P2, P5)，(P3, P5)，(P4, P7)，(P5, P6)，(P5, P7)，(P7, P6)，(P4, P5)，(P6, P7)，(P7, P8)}",
       "B": "→={P1, P2}，(P1, P3)，(P1, P4)，(P2, P3)，(P2, P5)，(P3, P4)，(P3, P6)，(P4, P7)，(P5, P6)，(P5, P8)，(P6, P7)，(P7, P8)}",

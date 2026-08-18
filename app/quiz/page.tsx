@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import { useQuizStore } from "@/stores/quiz";
 import { db, getQuestions } from "@/lib/db";
-import { generateQuestionOrder, isMultiChoiceQuestion, toggleOptionSelection } from "@/lib/quiz-engine";
+import { generateQuestionOrder, isMultiChoiceQuestion, toggleOptionSelection, checkAnswer } from "@/lib/quiz-engine";
 import type { QuestionBank, QuizMode } from "@/lib/types";
 import QuestionCard from "@/components/QuestionCard";
 import AIChat, { type AIChatLayout } from "@/components/AIChat";
@@ -29,6 +29,13 @@ export default function QuizPage() {
     }
     return "split";
   });
+  const [autoAnalyzeOnWrong, setAutoAnalyzeOnWrong] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("auto_analyze_on_wrong") === "true";
+    }
+    return false;
+  });
+  const [pendingAutoTrigger, setPendingAutoTrigger] = useState("");
 
   const handleLayoutChange = (mode: AIChatLayout) => {
     setAiLayout(mode);
@@ -36,6 +43,14 @@ export default function QuizPage() {
       localStorage.setItem("ai_layout_mode", mode);
     }
   };
+
+  const toggleAutoAnalyze = useCallback(() => {
+    setAutoAnalyzeOnWrong(prev => {
+      const next = !prev;
+      localStorage.setItem("auto_analyze_on_wrong", String(next));
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -213,6 +228,15 @@ export default function QuizPage() {
       // Single choice: immediately submit answer!
       setLocalAnswer("");
       await answerQuestion(currentQuestion.id!, optId);
+
+      // 答错自动分析（仅顺序/随机模式）
+      if (autoAnalyzeOnWrong && (currentSession.mode === "sequential" || currentSession.mode === "random")) {
+        const isCorrect = checkAnswer(optId, currentQuestion.answer, "single");
+        if (!isCorrect) {
+          setShowAIChat(true);
+          setPendingAutoTrigger("题眼秒杀与避坑技巧");
+        }
+      }
     }
   };
 
@@ -220,6 +244,15 @@ export default function QuizPage() {
     if (!localAnswer || !currentQuestion) return;
     await answerQuestion(currentQuestion.id!, localAnswer);
     setLocalAnswer("");
+
+    // 答错自动分析（仅顺序/随机模式，多选题）
+    if (autoAnalyzeOnWrong && (currentSession.mode === "sequential" || currentSession.mode === "random")) {
+      const isCorrect = checkAnswer(localAnswer, currentQuestion.answer, "multi");
+      if (!isCorrect) {
+        setShowAIChat(true);
+        setPendingAutoTrigger("题眼秒杀与避坑技巧");
+      }
+    }
   };
 
   const handleEnd = async () => {
@@ -243,6 +276,17 @@ export default function QuizPage() {
           <span className={styles.modeBadge}>{modeLabel}</span>
         </div>
         <div className={styles.headerRight}>
+          <button
+            type="button"
+            className={`${styles.autoToggleBtn} ${autoAnalyzeOnWrong ? styles.autoToggleOn : ""}`}
+            onClick={toggleAutoAnalyze}
+            title={`答错自动分析：${autoAnalyzeOnWrong ? "已开启" : "已关闭"}`}
+          >
+            <span className={styles.autoToggleSlider} />
+            <span style={{ fontSize: "0.78rem" }}>
+              {autoAnalyzeOnWrong ? "自动分析" : "自动分析"}
+            </span>
+          </button>
           <button 
             type="button"
             className={`${styles.aiBtn} ${showAIChat ? styles.aiBtnActive : ""}`} 
@@ -281,6 +325,8 @@ export default function QuizPage() {
                 layout="bottom"
                 onLayoutChange={handleLayoutChange}
                 onClose={() => setShowAIChat(false)}
+                autoTriggerText={pendingAutoTrigger}
+                onAutoTriggerSent={() => setPendingAutoTrigger("")}
               />
             </div>
           )}
@@ -295,6 +341,8 @@ export default function QuizPage() {
               layout="split"
               onLayoutChange={handleLayoutChange}
               onClose={() => setShowAIChat(false)}
+              autoTriggerText={pendingAutoTrigger}
+              onAutoTriggerSent={() => setPendingAutoTrigger("")}
             />
           </div>
         )}
@@ -308,6 +356,8 @@ export default function QuizPage() {
           layout="drawer"
           onLayoutChange={handleLayoutChange}
           onClose={() => setShowAIChat(false)}
+          autoTriggerText={pendingAutoTrigger}
+          onAutoTriggerSent={() => setPendingAutoTrigger("")}
         />
       )}
     </div>

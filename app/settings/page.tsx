@@ -13,6 +13,10 @@ const PROVIDER_TEMPLATES = {
   gemini: { name: "Gemini (兼容接口)", url: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-1.5-flash" }
 };
 
+import { DEFAULT_QA_SYSTEM_PROMPT } from "@/components/AIChat";
+
+export const DEFAULT_ANALYSIS_SYSTEM_PROMPT = `你是一名国家软考辅导名师。请结合本次模考的得分与错题分布，按知识领域剖析薄弱考点，采用【四维错因归因】（概念混淆/审题偏差/计算应用/知识盲区）总结高频失分点，并给出针对性的题眼识别技巧与提分备考建议。严禁编造不知所云的打油诗或谐音口诀。`;
+
 export default function SettingsPage() {
   const { configs, loadConfigs, addConfig, updateConfig, deleteConfig, setActiveConfig } = useSettingsStore();
   const [showForm, setShowForm] = useState(false);
@@ -23,16 +27,16 @@ export default function SettingsPage() {
 
   const [qaPrompt, setQaPrompt] = useState<string>(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("qaPrompt") || "你是一个专业的辅导老师，请解答用户的问题，可以分步骤讲解。";
+      return localStorage.getItem("qaPrompt") || DEFAULT_QA_SYSTEM_PROMPT;
     }
-    return "你是一个专业的辅导老师，请解答用户的问题，可以分步骤讲解。";
+    return DEFAULT_QA_SYSTEM_PROMPT;
   });
 
   const [analysisPrompt, setAnalysisPrompt] = useState<string>(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("analysisPrompt") || "请分析这道题的考点，并解释为什么其他选项是错误的。";
+      return localStorage.getItem("analysisPrompt") || DEFAULT_ANALYSIS_SYSTEM_PROMPT;
     }
-    return "请分析这道题的考点，并解释为什么其他选项是错误的。";
+    return DEFAULT_ANALYSIS_SYSTEM_PROMPT;
   });
 
   useEffect(() => {
@@ -186,7 +190,23 @@ export default function SettingsPage() {
           <textarea className={styles.textarea} value={analysisPrompt} onChange={e => setAnalysisPrompt(e.target.value)} />
         </div>
 
-        <button className={styles.btnPrimary} onClick={savePrompts}>保存提示词</button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button className={styles.btnPrimary} onClick={savePrompts}>保存提示词</button>
+          <button 
+            className={styles.btn} 
+            onClick={() => {
+              if (confirm("确定要恢复默认提示词吗？")) {
+                setQaPrompt(DEFAULT_QA_SYSTEM_PROMPT);
+                setAnalysisPrompt(DEFAULT_ANALYSIS_SYSTEM_PROMPT);
+                localStorage.removeItem('qaPrompt');
+                localStorage.removeItem('analysisPrompt');
+                alert("已恢复默认名师提示词！");
+              }
+            }}
+          >
+            恢复默认提示词
+          </button>
+        </div>
       </section>
     </div>
   );

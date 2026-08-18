@@ -1,30 +1,31 @@
 import Link from "next/link";
 import styles from "./page.module.css";
+import { PencilIcon, BookOpenIcon, LibraryIcon, SettingsIcon } from "@/components/Icons";
 
 export default function HomePage() {
   const actions = [
     {
       title: "开始刷题",
       description: "进入题库，随机或按顺序刷题",
-      icon: "✏️",
+      icon: <PencilIcon size={28} />,
       href: "/quiz",
     },
     {
       title: "错题复习",
       description: "回顾历史错题，巩固薄弱知识点",
-      icon: "📓",
+      icon: <BookOpenIcon size={28} />,
       href: "/mistakes",
     },
     {
       title: "管理题库",
       description: "导入题库，查看题库列表",
-      icon: "📚",
+      icon: <LibraryIcon size={28} />,
       href: "/bank",
     },
     {
       title: "配置设置",
       description: "偏好设置，AI助手配置",
-      icon: "⚙️",
+      icon: <SettingsIcon size={28} />,
       href: "/settings",
     }
   ];
