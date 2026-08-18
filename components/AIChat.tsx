@@ -55,7 +55,7 @@ interface AIChatProps {
   onAutoTriggerSent?: () => void;
 }
 
-export const DEFAULT_QA_SYSTEM_PROMPT = `你是一名国家软考（系统架构设计师/软件设计师）辅导名师。回答请严谨、精炼、直击考点。
+export const DEFAULT_QA_SYSTEM_PROMPT = `你是一名资深的权威学科专家与考试辅导名师。回答请严谨、精炼、直击考点。
 
 【解题与考点解析规范】：
 1. 严禁编造生拼硬凑、不知所云的打油诗或首字谐音口诀。
