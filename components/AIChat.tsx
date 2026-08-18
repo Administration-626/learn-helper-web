@@ -362,19 +362,6 @@ ${content}
 
     try {
       const activeConfig = await getActiveLLMConfig();
-      if (!activeConfig) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: createMessageId(),
-            role: "assistant",
-            content: "⚠️ 请先在【设置】页面配置大模型 API Key 和 Base URL 后再使用 AI 答疑功能。",
-          },
-        ]);
-        setIsLoading(false);
-        clearInterval(timerId);
-        return;
-      }
 
       // Build rich context about the question
       const q = propQuestion || activeQuestion;

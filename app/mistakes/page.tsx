@@ -11,7 +11,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { formatCjkMarkdown } from "@/lib/markdown";
 import { useQuizStore } from "@/stores/quiz";
-import { SparklesIcon, TrashIcon } from "@/components/Icons";
+import { SparklesIcon, TrashIcon, ChartBarIcon } from "@/components/Icons";
 import { classifyQuestion, isOptionCorrect, isOptionSelected, formatReadableAnswer } from "@/lib/quiz-engine";
 
 type MistakeItem = MistakeRecord & { questionData?: Question, bankName?: string };
@@ -112,7 +112,8 @@ export default function MistakesPage() {
         <div className={styles.domainOverview}>
           <div className={styles.domainHeader}>
             <div className={styles.domainTitle}>
-              <span>📊 知识薄弱领域分析</span>
+              <ChartBarIcon size={16} />
+              <span>知识薄弱领域分析</span>
               <span className={styles.domainSubtext}>
                 （按错误频次排序，点击可筛选专项强化）
               </span>

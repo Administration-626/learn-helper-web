@@ -42,16 +42,31 @@ function isSafeUrl(urlStr: string): boolean {
   }
 }
 
+export async function GET() {
+  const hasServerConfig = Boolean(process.env.LLM_API_KEY && process.env.LLM_API_URL);
+  return Response.json({
+    hasServerConfig,
+    serverModel: hasServerConfig ? (process.env.LLM_MODEL || 'default') : null,
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as ChatRequestPayload;
     const { messages, config } = body;
 
-    if (!config || !config.apiUrl || !config.apiKey) {
-      return new Response('Missing LLM configuration', { status: 400 });
+    const apiUrl = (config?.apiUrl || process.env.LLM_API_URL || '').trim();
+    const apiKey = (config?.apiKey || process.env.LLM_API_KEY || '').trim();
+    const model = (config?.model || process.env.LLM_MODEL || 'gpt-4o-mini').trim();
+    const maxTokens = config?.maxTokens || (process.env.LLM_MAX_TOKENS ? parseInt(process.env.LLM_MAX_TOKENS, 10) : 8192);
+    const temperature = config?.temperature ?? (process.env.LLM_TEMPERATURE ? parseFloat(process.env.LLM_TEMPERATURE) : 0.7);
+    const topP = config?.topP ?? (process.env.LLM_TOP_P ? parseFloat(process.env.LLM_TOP_P) : 1);
+
+    if (!apiUrl || !apiKey) {
+      return new Response('Missing LLM configuration: 请在【设置】页面配置 API Key，或在服务器配置环境变量', { status: 400 });
     }
 
-    let endpoint = config.apiUrl.trim().replace(/\/+$/, '');
+    let endpoint = apiUrl.replace(/\/+$/, '');
     if (!endpoint.endsWith('/chat/completions')) {
       endpoint += '/chat/completions';
     }
@@ -61,11 +76,11 @@ export async function POST(req: NextRequest) {
     }
 
     const payload = {
-      model: config.model || 'gpt-3.5-turbo',
+      model,
       messages,
-      max_tokens: Math.max(config.maxTokens || 8192, 4096),
-      temperature: config.temperature ?? 0.7,
-      top_p: config.topP ?? 1,
+      max_tokens: Math.max(maxTokens, 4096),
+      temperature,
+      top_p: topP,
       stream: true,
     };
 
