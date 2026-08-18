@@ -22,7 +22,7 @@ graph TD
     subgraph Layer2 ["2. 渲染与排版层 Rendering Engine"]
         R1["KaTeX 数学公式双通道渲染"]
         R2["CJK 标点排版修正器"]
-        R3["DeepSeek-R1 思考链流式折叠"]
+        R3["深度思考/推理链流式折叠"]
     end
 
     subgraph Layer3 ["3. 核心业务与算法层 Core Engine"]
@@ -85,7 +85,7 @@ graph TD
 ### 5. 服务代理与安全网关 (Edge Gateway & LLM Proxy)
 - **安全防护**：内置 SSRF 白名单过滤与内网 IP 拦截，保护服务端安全。
 - **流式转发**：基于 SSE (Server-Sent Events) 双向流式转发，客户端断开与 90s 超时双向中断机制。
-- **长推理适配**：针对 DeepSeek-R1 等深度思考模型，动态扩展输出 Token 空间，防止推理链被截断。
+- **长推理与思考流适配**：全面支持各大模型厂商的深度思考/推理模型（Reasoning Models），支持 `reasoning_content` 流式解构与 Token 动态空间适配。
 
 ---
 

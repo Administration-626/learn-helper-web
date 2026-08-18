@@ -138,7 +138,7 @@ export default function SettingsPage() {
                 onChange={e => setForm({...form, maxTokens: parseInt(e.target.value, 10) || 8192})}
               />
               <span style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', marginTop: '4px', display: 'block' }}>
-                💡 深度思考模型（如 DeepSeek-R1）思考链会占用 Token，设置 8192 可防止长解析被意外截断。
+                深度思考/推理模型（Reasoning Models）的思考过程会消耗额外 Token，建议设置 8192 或更高以防长解析被截断。
               </span>
             </div>
 
